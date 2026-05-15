@@ -2,3 +2,8 @@ node_modules
 .DS_Store
 dist
 .vite
+.next
+.next
+node_modules
+.env*
+.DS_Store
