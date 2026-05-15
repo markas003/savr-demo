@@ -1,6 +1,5 @@
 export const externalLinks = {
   visa: "https://www.visa.com",
-  tink: "https://tink.com",
   intesa: "https://www.intesasanpaolo.com",
   unicredit: "https://www.unicredit.it",
   hype: "https://www.hype.it",

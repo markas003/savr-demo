@@ -13,12 +13,16 @@
 }
 
 html {
+  overflow: hidden;
+  overscroll-behavior: none;
   scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  overflow: hidden;
+  overscroll-behavior: none;
   font-family: var(--font-sans);
 }
 

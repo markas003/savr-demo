@@ -6,7 +6,6 @@ import { PhoneFrame } from "@/components/phone-frame";
 import { MobileScreen } from "@/components/mobile-screen";
 import { externalLinks, ExternalLinkKey } from "@/data/links";
 import {
-  advisorPrompts,
   AppTab,
   cardDetails,
   connectedAccounts,
@@ -25,7 +24,7 @@ import { bestOfferForMerchant, recommendationScore, visibleReminderCount } from 
 
 type Modal =
   | { type: "card"; id: string }
-  | { type: "tink" }
+  | { type: "bankReconnect" }
   | { type: "offer"; id: string; action: "use" | "activate" | "details" }
   | { type: "snooze"; id: string }
   | { type: "settings"; section: string }
@@ -33,7 +32,9 @@ type Modal =
   | { type: "ar" }
   | { type: "event"; id: string }
   | { type: "receipt"; id: string; mode: "upload" | "manual" }
+  | { type: "transaction"; id: string }
   | { type: "plugin"; key: ExternalLinkKey; name: string }
+  | { type: "cardRecommendation" }
   | { type: "message"; title: string; body: string }
   | null;
 
@@ -53,26 +54,25 @@ type CardForm = {
   issuer: string;
   network: string;
   cardType: string;
-  billingAddress: string;
 };
 
 const baselineSavedThisMonth = 318.9;
 const baselineMissedThisMonth = 120;
 
-const tabs: Array<{ id: AppTab; label: string; icon: string }> = [
-  { id: "account", label: "Account", icon: "◼" },
-  { id: "benefits", label: "Benefits", icon: "◆" },
-  { id: "difference", label: "SAVR Difference", icon: "△" },
-  { id: "advisor", label: "Personal Advisor", icon: "◎" },
+const tabs: Array<{ id: AppTab; label: string }> = [
+  { id: "account", label: "Account" },
+  { id: "benefits", label: "Benefits" },
+  { id: "difference", label: "SAVR Difference" },
+  { id: "advisor", label: "Personal Advisor" },
 ];
 
 const notificationTypes = ["website", "in-store", "app", "expiry", "new card suggestion"];
 const thresholdOptions = [2, 5, 10];
-const timingOptions = ["immediate", "after 30 seconds in store", "after 2 minutes in store", "only at checkout"];
+const timingOptions = ["0 seconds", "30 seconds", "1 minute", "1 minute 30 seconds", "2 minutes", "2 minutes 30 seconds", "3 minutes"];
 const initialCards: ConnectedCard[] = connectedAccounts.map((card, index) => ({
   ...card,
   network: card.name.includes("Mastercard") ? "MC" : "VISA",
-  last4: ["4821", "9034", "1177", "5562", "----"][index],
+  last4: ["4821", "9034", "1177", "5562", "7749"][index],
   default: card.id === "intesa",
 }));
 
@@ -86,28 +86,85 @@ function openExternal(key: ExternalLinkKey) {
 
 function SavrLogo() {
   return (
-    <div className="flex items-center gap-2">
-      <svg viewBox="0 0 132 96" className="h-8 w-10 shrink-0" aria-hidden="true">
+    <div className="flex items-center gap-2.5" aria-label="SAVR">
+      <svg viewBox="0 0 72 48" className="h-8 w-12 shrink-0" aria-hidden="true">
         <defs>
-          <linearGradient id="phoneBlue" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#1f6fff" />
-            <stop offset="100%" stopColor="#1140b3" />
+          <linearGradient id="savrLogoBlue" x1="8" y1="0" x2="58" y2="16" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#23a8ff" />
+            <stop offset="1" stopColor="#0b6cff" />
           </linearGradient>
-          <linearGradient id="phoneGold" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ffd347" />
-            <stop offset="100%" stopColor="#f2a900" />
+          <linearGradient id="savrLogoGold" x1="6" y1="28" x2="56" y2="44" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ffe45c" />
+            <stop offset="1" stopColor="#f4b000" />
           </linearGradient>
         </defs>
-        <g transform="translate(8 8)">
-          <path d="M16 16c0-6.4 7.1-10.3 12.5-7l45 27.3c5 3 5 10.2 0 13.2l-45 27.2C23.1 80 16 76.1 16 69.6V16Z" fill="url(#phoneBlue)" transform="rotate(-33 44 40)" />
-          <path d="M16 16c0-6.4 7.1-10.3 12.5-7l45 27.3c5 3 5 10.2 0 13.2l-45 27.2C23.1 80 16 76.1 16 69.6V16Z" fill="url(#phoneGold)" transform="rotate(33 42 40)" />
-        </g>
+        <path d="M8 22 48 2c5-2.5 10 1.1 10 6.1 0 2.5-1.4 4.8-3.6 6L14.8 34C9.8 36.5 4 32.9 4 27.3c0-2.2 1.6-4.3 4-5.3Z" fill="url(#savrLogoBlue)" />
+        <path d="M10 35 50 15c5-2.5 10 1.1 10 6.1 0 2.5-1.4 4.8-3.6 6L16.8 47C11.8 49.5 6 45.9 6 40.3c0-2.2 1.6-4.3 4-5.3Z" fill="url(#savrLogoGold)" />
       </svg>
-      <div className="text-xl font-black tracking-normal">
-        <span className="bg-gradient-to-b from-[#2d79ff] to-[#1140b3] bg-clip-text text-transparent">SAV</span>
-        <span className="bg-gradient-to-b from-[#ffd347] to-[#f2a900] bg-clip-text text-transparent">R</span>
+      <div className="text-[24px] font-black leading-none tracking-normal">
+        <span className="text-[#28a8ff]">SAV</span>
+        <span className="text-[#ffd347]">R</span>
       </div>
     </div>
+  );
+}
+
+function PasscodeLogo() {
+  return (
+    <div className="flex flex-col items-center" aria-label="SAVR">
+      <svg viewBox="0 0 72 48" className="h-16 w-24 shrink-0" aria-hidden="true">
+        <defs>
+          <linearGradient id="savrPasscodeBlue" x1="8" y1="0" x2="58" y2="16" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#23a8ff" />
+            <stop offset="1" stopColor="#0b6cff" />
+          </linearGradient>
+          <linearGradient id="savrPasscodeGold" x1="6" y1="28" x2="56" y2="44" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ffe45c" />
+            <stop offset="1" stopColor="#f4b000" />
+          </linearGradient>
+        </defs>
+        <path d="M8 22 48 2c5-2.5 10 1.1 10 6.1 0 2.5-1.4 4.8-3.6 6L14.8 34C9.8 36.5 4 32.9 4 27.3c0-2.2 1.6-4.3 4-5.3Z" fill="url(#savrPasscodeBlue)" />
+        <path d="M10 35 50 15c5-2.5 10 1.1 10 6.1 0 2.5-1.4 4.8-3.6 6L16.8 47C11.8 49.5 6 45.9 6 40.3c0-2.2 1.6-4.3 4-5.3Z" fill="url(#savrPasscodeGold)" />
+      </svg>
+      <div className="mt-2 text-[44px] font-black leading-none tracking-normal">
+        <span className="text-[#28a8ff]">SAV</span>
+        <span className="text-[#ffd347]">R</span>
+      </div>
+    </div>
+  );
+}
+
+function TabIcon({ id }: { id: AppTab }) {
+  const common = "mx-auto h-5 w-5";
+  if (id === "account") {
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" aria-hidden="true">
+        <rect x="3.5" y="6" width="17" height="12" rx="3" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M7 10h4.8M7 14h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (id === "benefits") {
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" aria-hidden="true">
+        <path d="M4.5 11.4 11.4 4.5h6.1v6.1l-6.9 6.9a2.2 2.2 0 0 1-3.1 0l-3-3a2.2 2.2 0 0 1 0-3.1Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" />
+      </svg>
+    );
+  }
+  if (id === "difference") {
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" aria-hidden="true">
+        <path d="M5 18V6M5 18h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="m8 15 3.2-3.2 2.4 2.4L18.5 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" className={common} fill="none" aria-hidden="true">
+      <path d="M5 7.8A4.8 4.8 0 0 1 9.8 3h4.4A4.8 4.8 0 0 1 19 7.8v3.6a4.8 4.8 0 0 1-4.8 4.8H11l-4.2 3v-3.4A4.8 4.8 0 0 1 5 11.4V7.8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M9 8.5h6M9 12h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }
 
@@ -140,12 +197,12 @@ function ActionButton({
 
 function Pill({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "blue" | "gold" | "green" }) {
   const classes = {
-    default: "bg-white/8 text-white/60",
-    blue: "bg-[#2d79ff]/14 text-[#8fc2ff]",
-    gold: "bg-[#ffd347]/14 text-[#ffd347]",
-    green: "bg-[#7ee5a7]/14 text-[#7ee5a7]",
+    default: "border border-white/10 bg-white/10 text-white/72 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+    blue: "border border-[#2d79ff]/30 bg-[#2d79ff]/16 text-[#9dccff] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+    gold: "border border-[#ffd347]/30 bg-[#ffd347]/16 text-[#ffd347] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+    green: "border border-[#7ee5a7]/30 bg-[#7ee5a7]/16 text-[#7ee5a7] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
   };
-  return <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${classes[tone]}`}>{children}</span>;
+  return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold leading-none ${classes[tone]}`}>{children}</span>;
 }
 
 function AppHeader({ onProfile }: { onProfile: () => void }) {
@@ -165,7 +222,7 @@ function BottomTabs({ tab, setTab }: { tab: AppTab; setTab: (tab: AppTab) => voi
       <div className="grid grid-cols-4 gap-1">
         {tabs.map((item) => (
           <button key={item.id} type="button" onClick={() => setTab(item.id)} className={`rounded-2xl px-1 py-2 text-center transition ${tab === item.id ? "bg-white/12 text-white" : "text-white/42"}`}>
-            <div className="text-sm">{item.icon}</div>
+            <TabIcon id={item.id} />
             <div className="mt-1 text-[10px] font-semibold leading-tight">{item.label}</div>
           </button>
         ))}
@@ -178,10 +235,12 @@ function ModalSheet({
   modal,
   close,
   app,
+  onLock,
 }: {
   modal: Modal;
   close: () => void;
   app: DemoState;
+  onLock: () => void;
 }) {
   if (!modal) return null;
 
@@ -189,21 +248,21 @@ function ModalSheet({
   const card = modal.type === "card" ? app.cards.find((item) => item.id === modal.id) : null;
   const detail = modal.type === "card" ? cardDetails.find((item) => item.id === modal.id) : null;
   const event = modal.type === "event" || modal.type === "receipt" ? app.events.find((item) => item.id === modal.id) : null;
+  const transaction = modal.type === "transaction" ? recentTransactions.find((item) => item.id === modal.id) : null;
 
   return (
     <div className="absolute inset-0 z-50 flex items-end bg-black/58 backdrop-blur-sm" onClick={close}>
       <div className="max-h-[82%] w-full overflow-y-auto rounded-t-[30px] border border-white/10 bg-[#08111f] p-4 shadow-2xl" onClick={(eventClick) => eventClick.stopPropagation()}>
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/16" />
 
-        {modal.type === "tink" && (
-          <SheetSection title="Tink secure reconnect">
-            <p className="text-sm leading-6 text-white/64">Demo secure connection. SAVR refreshes card and spending insights through a Tink-style consent flow.</p>
+        {modal.type === "bankReconnect" && (
+          <SheetSection title="Secure reconnect">
+            <p className="text-sm leading-6 text-white/64">Refresh your cards and spending insights through a secure bank connection flow.</p>
             <div className="mt-4 flex gap-2">
-              <ActionButton onClick={() => { app.setTinkConnected(true); app.setToast("Tink connection refreshed"); close(); }}>Confirm connection</ActionButton>
+              <ActionButton onClick={() => { app.setBankConnected(true); app.setToast("Connection refreshed"); close(); }}>Confirm connection</ActionButton>
               <ActionButton tone="secondary" onClick={close}>Cancel</ActionButton>
             </div>
             <div className="mt-4 flex gap-3 text-sm">
-              <ExternalTextLink linkKey="tink">Tink</ExternalTextLink>
               <ExternalTextLink linkKey="visa">Visa</ExternalTextLink>
             </div>
           </SheetSection>
@@ -214,28 +273,31 @@ function ModalSheet({
             <div className="grid gap-2 text-sm text-white/68">
               <p>Issuer: {card.issuer}</p>
               <p>Card type: {card.type}</p>
-              <p>Connected status: connected</p>
               <p>Card ending: •••• {card.last4 || "0000"}</p>
             </div>
-            <h4 className="mt-4 text-sm font-bold">Active benefits</h4>
+            <h4 className="mt-4 text-sm font-bold">Current SAVR matches</h4>
             <div className="mt-2 grid gap-2">{(detail?.activeBenefits || ["Eligible for SAVR merchant matching", "Used in best-card recommendations"]).map((item) => <Panel key={item}>{item}</Panel>)}</div>
-            <h4 className="mt-4 text-sm font-bold">Recommended use cases</h4>
+            <h4 className="mt-4 text-sm font-bold">When SAVR would recommend it</h4>
             <div className="mt-2 flex flex-wrap gap-2">{(detail?.recommendedUse || ["New purchases", "Merchant offers"]).map((item) => <Pill key={item} tone="blue">{item}</Pill>)}</div>
-            <ActionButton className="mt-4 w-full" onClick={() => openExternal(card.linkKey)}>Open issuer website</ActionButton>
           </SheetSection>
         )}
 
         {offer && modal.type === "offer" && (
           <SheetSection title={offer.merchant}>
-            <p className="text-sm text-white/60">{offer.title}</p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <Panel>Best card: {offer.bestCard}</Panel>
-              <Panel>Saving: {eur(offer.estimatedSaving)}</Panel>
-              <Panel>Channel: {offer.channel}</Panel>
-              <Panel>Expiry: {offer.expiry}</Panel>
+            <div className="mt-4 grid gap-2">
+              <TransactionDetailRow label="Best card" value={offer.bestCard} />
+              <TransactionDetailRow label="Value" value={offerValueDetail(offer)} />
+              <TransactionDetailRow label="Channel" value={formatChannel(offer.channel)} nowrap />
+              <TransactionDetailRow label="Expires" value={offer.expiry} nowrap />
             </div>
-            <p className="mt-4 text-sm leading-6 text-white/66">{offer.why}</p>
-            <p className="mt-2 text-xs leading-5 text-white/42">{offer.restrictions}</p>
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/6 p-3">
+              <p className="text-xs font-black uppercase tracking-[0.08em] text-white/40">Why this matters</p>
+              <p className="mt-2 text-sm leading-6 text-white/68">{offer.why}</p>
+            </div>
+            <div className="mt-2 rounded-2xl border border-white/10 bg-white/6 p-3">
+              <p className="text-xs font-black uppercase tracking-[0.08em] text-white/40">How to redeem</p>
+              <p className="mt-2 text-sm leading-6 text-white/68">{offer.restrictions}</p>
+            </div>
             {modal.action === "use" && (
               <div className="mt-4 rounded-2xl border border-white/10 bg-white/6 p-4">
                 {offer.channel === "website" && (
@@ -250,7 +312,7 @@ function ModalSheet({
                 {offer.channel === "in-store" && (
                   <div className="flex items-center gap-4">
                     <QrBox />
-                    <p className="text-sm leading-6 text-white/66">Show this demo QR at checkout and pay with {offer.bestCard}.</p>
+                    <p className="text-sm leading-6 text-white/66">Show this QR at checkout and pay with {offer.bestCard}.</p>
                   </div>
                 )}
                 {offer.channel === "app" && (
@@ -267,19 +329,13 @@ function ModalSheet({
             {modal.action === "activate" && (
               <div className="mt-4 rounded-2xl border border-[#2d79ff]/30 bg-[#2d79ff]/12 p-4">
                 <p className="text-sm font-bold">Issuer activation</p>
-                <p className="mt-2 text-xs leading-5 text-white/62">Simulated deep link opened for {offer.bestCard}. SAVR records the benefit as activated before checkout.</p>
+                <p className="mt-2 text-xs leading-5 text-white/62">SAVR will mark this benefit as ready before you pay with {offer.bestCard}.</p>
               </div>
             )}
-            {modal.action === "details" && (
-              <div className="mt-4 grid gap-2">
-                <Panel>Recommendation score: {app.scoreOffer(offer.id)}</Panel>
-                <Panel>Favorite match: {app.favoriteStores.includes(offer.merchant) || app.favoriteCategories.includes(offer.category) ? "yes" : "no"}</Panel>
-                <Panel>Previous missed saving: {app.missedMerchants.includes(offer.merchant) ? "yes" : "no"}</Panel>
-              </div>
-            )}
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <ActionButton onClick={() => { modal.action === "activate" ? app.activateOffer(offer.id) : app.useOffer(offer.id); close(); }}>{modal.action === "activate" ? "Activate demo" : "Confirm use"}</ActionButton>
-              <ActionButton tone="secondary" onClick={() => openExternal(offer.linkKey)}>Open partner</ActionButton>
+            <div className="mt-4 grid min-w-0 grid-cols-2 gap-2">
+              <OfferActionButton tone={offerRequiresActivation(offer) ? "secondary" : "primary"} className="col-span-2" onClick={() => handleOfferPrimary(offer, app, close)}>{offerRequiresActivation(offer) ? "Activate" : "Use"}</OfferActionButton>
+              <OfferActionButton onClick={() => { close(); app.setModal({ type: "snooze", id: offer.id }); }}>Snooze</OfferActionButton>
+              <OfferActionButton onClick={() => app.favoriteOffer(offer.id)}>{offer.favorite ? "Unfavorite" : "Favorite"}</OfferActionButton>
             </div>
           </SheetSection>
         )}
@@ -300,9 +356,9 @@ function ModalSheet({
 
         {modal.type === "logout" && (
           <SheetSection title="Log out?">
-            <p className="text-sm text-white/62">This signs Francesca out of the demo phone and shows a locked state.</p>
+            <p className="text-sm text-white/62">You will be signed out of SAVR on this phone.</p>
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <ActionButton tone="danger" onClick={() => { app.setSignedOut(true); close(); }}>Confirm log out</ActionButton>
+              <ActionButton tone="danger" onClick={() => { close(); app.setSettingsOpen(false); onLock(); }}>Confirm log out</ActionButton>
               <ActionButton tone="secondary" onClick={close}>Cancel</ActionButton>
             </div>
           </SheetSection>
@@ -348,9 +404,39 @@ function ModalSheet({
 
         {modal.type === "plugin" && (
           <SheetSection title={`${modal.name} plug-in`}>
-            <p className="text-sm leading-6 text-white/66">Demo plug-in enabled: SAVR can answer card and offer questions inside this assistant.</p>
-            <div className="mt-4 rounded-2xl bg-white/6 p-3 text-sm">@SAVR what card should I use at Zara?<br /><span className="text-[#7ee5a7]">Use Revolut + SAVE10 today. Estimated saving: EUR 7.50. I can also remind you before checkout.</span></div>
+            <p className="text-sm leading-6 text-white/66">SAVR can answer your card and offer questions inside this assistant.</p>
             <ActionButton className="mt-4 w-full" onClick={() => openExternal(modal.key)}>Open {modal.name}</ActionButton>
+          </SheetSection>
+        )}
+
+        {modal.type === "cardRecommendation" && (
+          <SheetSection title="Visa Rewards Plus">
+            <div className="grid gap-2">
+              <TransactionDetailRow label="Why SAVR recommends it" value="Your recent spend is shifting toward fashion, delivery, and travel, where a stronger rewards card can outperform your current basic Visa debit setup." />
+              <TransactionDetailRow label="Estimated uplift" value="EUR 14-22/month" nowrap tone="saved" />
+              <TransactionDetailRow label="Best fit" value="Fashion cashback, delivery benefits, and travel rewards" />
+            </div>
+            <ActionButton className="mt-4 w-full" onClick={() => undefined}>Open card website</ActionButton>
+          </SheetSection>
+        )}
+
+        {transaction && modal.type === "transaction" && (
+          <SheetSection title={transaction.merchant}>
+            <div className="grid gap-2">
+              <TransactionDetailRow label="Card used" value={transaction.card} />
+              <TransactionDetailRow label="Category" value={transaction.category} nowrap />
+              <TransactionDetailRow label="Amount spent" value={eur(transaction.amount)} nowrap />
+              <TransactionDetailRow label={transaction.savrStatus === "missed" ? "Missed saving" : transaction.savrAmount === 0 ? "SAVR result" : "Saved"} value={transaction.savrAmount === 0 ? "No better offer found" : eur(transaction.savrAmount)} tone={transaction.savrStatus === "missed" ? "missed" : "saved"} nowrap />
+            </div>
+            <div className="mt-4 rounded-2xl border border-[#2d79ff]/25 bg-[#2d79ff]/10 p-4">
+              <p className="text-sm font-black">SAVR insights</p>
+              <p className="mt-2 text-sm leading-6 text-white/66">{transactionInsight(transaction.merchant)}</p>
+              <p className="mt-3 text-sm leading-6 text-white/66">{transaction.redemption}</p>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <ActionButton onClick={() => { app.setTransactionsOpen(false); app.setTab("benefits"); close(); }}>View matching offers</ActionButton>
+              <ActionButton tone="secondary" onClick={() => { app.setTab("advisor"); close(); }}>Ask advisor</ActionButton>
+            </div>
           </SheetSection>
         )}
 
@@ -378,6 +464,26 @@ function Panel({ children }: { children: React.ReactNode }) {
   return <div className="rounded-2xl border border-white/10 bg-white/6 p-3 text-xs text-white/68">{children}</div>;
 }
 
+function TransactionDetailRow({
+  label,
+  value,
+  tone = "default",
+  nowrap = false,
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "saved" | "missed";
+  nowrap?: boolean;
+}) {
+  const valueColor = tone === "saved" ? "text-[#7ee5a7]" : tone === "missed" ? "text-[#ff8f80]" : "text-white/76";
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/6 p-3 text-xs">
+      <p className="text-white/42">{label}</p>
+      <p className={`mt-1 min-w-0 font-black leading-5 ${valueColor} ${nowrap ? "truncate whitespace-nowrap" : "break-words"}`}>{value}</p>
+    </div>
+  );
+}
+
 function ExternalTextLink({ linkKey, children }: { linkKey: ExternalLinkKey; children: React.ReactNode }) {
   return (
     <a href={externalLinks[linkKey]} target="_blank" rel="noopener noreferrer" className="text-[#69a8ff] underline decoration-white/20 underline-offset-4">
@@ -394,6 +500,105 @@ function QrBox() {
   );
 }
 
+function transactionInsight(merchant: string) {
+  const insights: Record<string, string> = {
+    Zara: "SAVR found a better checkout path: Revolut Card plus public code SAVE10 would capture about EUR 7.50 on a similar basket.",
+    Esselunga: "This fits your grocery pattern. UniCredit Mastercard is the right card when the basket clears the groceries boost threshold.",
+    Glovo: "Your delivery spend is frequent. SAVR checks Revolut delivery benefits and reminds you before in-app checkout.",
+    Nike: "This transaction matched an issuer benefit. Intesa Visa is the best card for Nike in-store cashback.",
+    Trenitalia: "Transport spend maps to UniCredit travel rewards. SAVR watches expiry dates and app checkout moments.",
+    Spotify: "No stronger active benefit was found for this subscription, so SAVR keeps it classified but does not surface a reminder.",
+    SHEIN: "SAVR flagged a missed HYPE cashback opportunity and will prioritize this merchant in future fashion reminders.",
+    Sephora: "Beauty offers are expiring soon. SAVR recommends checking HYPE and partner codes before paying.",
+  };
+  return insights[merchant] || "SAVR checks the merchant, category, card used, active issuer benefits, public codes, and missed-saving history for the next best action.";
+}
+
+function TransactionOutcome({ tx, compact = false }: { tx: (typeof recentTransactions)[number]; compact?: boolean }) {
+  const missed = tx.savrStatus === "missed";
+  const neutral = tx.savrAmount === 0;
+  const text = neutral ? "No saving missed" : `${missed ? "Missed" : "Saved"} ${eur(tx.savrAmount)}`;
+  return (
+    <span className={`whitespace-nowrap ${compact ? "text-[11px]" : "text-xs"} font-black ${missed ? "text-[#ff8f80]" : "text-[#7ee5a7]"}`}>
+      {text}
+    </span>
+  );
+}
+
+function offerValueLabel(offer: ReturnType<typeof useDemoState>["offers"][number]) {
+  const lower = offer.title.toLowerCase();
+  const percentMatch = offer.title.match(/\d+%/);
+  if (offer.id === "zara-revolut") return "Save 10%";
+  if (percentMatch && lower.includes("cashback")) return `${percentMatch[0]} cashback`;
+  if (percentMatch) return `${percentMatch[0]} off`;
+  if (lower.includes("cashback")) return "Cashback varies";
+  if (lower.includes("free deliver")) return "Free delivery";
+  return `Save ${eur(offer.estimatedSaving)}`;
+}
+
+function offerValueDetail(offer: ReturnType<typeof useDemoState>["offers"][number]) {
+  const lower = offer.title.toLowerCase();
+  const percentMatch = offer.title.match(/\d+%/);
+  if (percentMatch && lower.includes("cashback")) return `${percentMatch[0]} cashback based on your final basket`;
+  if (percentMatch) return `${percentMatch[0]} discount based on your final basket`;
+  if (lower.includes("cashback")) return "Cashback amount depends on your final spend";
+  if (lower.includes("free deliver")) return `Usually worth ${eur(offer.estimatedSaving)}`;
+  return eur(offer.estimatedSaving);
+}
+
+function offerRequiresActivation(offer: ReturnType<typeof useDemoState>["offers"][number]) {
+  return offer.status === "activation required" && !offer.activated;
+}
+
+function formatChannel(channel: OfferChannel) {
+  return channel === "in-store" ? "In-store" : channel.charAt(0).toUpperCase() + channel.slice(1);
+}
+
+function transactionSavedTotal() {
+  return recentTransactions
+    .filter((tx) => tx.savrStatus === "saved" && tx.savrAmount > 0)
+    .reduce((sum, tx) => sum + tx.savrAmount, 0);
+}
+
+function formatOfferType(type: string) {
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+function offerPriority(offer: ReturnType<typeof useDemoState>["offers"][number], app: DemoState) {
+  let priority = app.scoreOffer(offer.id);
+  if (offer.status === "expiring soon") priority += 28;
+  if (offer.favorite) priority += 18;
+  if (offer.status === "activation required") priority += 8;
+  if (offer.channel === "in-store" && app.mode === "active") priority += 6;
+  return priority;
+}
+
+function handleOfferPrimary(offer: ReturnType<typeof useDemoState>["offers"][number], app: DemoState, close?: () => void) {
+  if (offerRequiresActivation(offer)) {
+    app.activateOffer(offer.id);
+    app.setModal({ type: "offer", id: offer.id, action: "activate" });
+    return;
+  }
+
+  if (offer.channel === "in-store") {
+    app.setModal({ type: "offer", id: offer.id, action: "use" });
+    return;
+  }
+
+  if (offer.channel === "website" && offer.type === "public promo code" && offer.code) {
+    navigator.clipboard?.writeText(offer.code).catch(() => undefined);
+    app.useOffer(offer.id);
+    close?.();
+    return;
+  }
+
+  app.setModal({ type: "offer", id: offer.id, action: "use" });
+}
+
+function isExpiryReminder(offer: ReturnType<typeof useDemoState>["offers"][number]) {
+  return offer.status === "expiring soon" || ["Tonight", "Tomorrow"].includes(offer.expiry);
+}
+
 type DemoState = ReturnType<typeof useDemoState>;
 
 function useDemoState() {
@@ -401,25 +606,29 @@ function useDemoState() {
   const [modal, setModal] = useState<Modal>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [cardManagerOpen, setCardManagerOpen] = useState(false);
+  const [transactionsOpen, setTransactionsOpen] = useState(false);
+  const [allBenefitsOpen, setAllBenefitsOpen] = useState(false);
+  const [allSavingsOpen, setAllSavingsOpen] = useState(false);
+  const [compareCardsOpen, setCompareCardsOpen] = useState(false);
   const [signedOut, setSignedOut] = useState(false);
   const [cards, setCards] = useState<ConnectedCard[]>(initialCards);
   const [mode, setMode] = useState<SavrMode>("active");
   const [threshold, setThreshold] = useState(5);
   const [customThreshold, setCustomThreshold] = useState(7);
-  const [timing, setTiming] = useState("after 2 minutes in store");
+  const [timing, setTiming] = useState("2 minutes");
   const [notifications, setNotifications] = useState<Record<string, boolean>>({
     website: true,
     "in-store": true,
     app: true,
     expiry: true,
-    "new card suggestion": false,
+    "new card suggestion": true,
   });
   const [favoriteStores, setFavoriteStores] = useState(defaultFavorites.stores);
   const [favoriteCategories, setFavoriteCategories] = useState(defaultFavorites.categories);
   const [offerState, setOfferState] = useState<OfferState>({});
   const [eventStatuses, setEventStatuses] = useState<EventState>({});
   const [toast, setToast] = useState("");
-  const [tinkConnected, setTinkConnected] = useState(true);
+  const [bankConnected, setBankConnected] = useState(true);
 
   const offers = initialOffers.map((offer) => ({
     ...offer,
@@ -486,19 +695,23 @@ function useDemoState() {
     setModal(null);
     setSettingsOpen(false);
     setCardManagerOpen(false);
+    setTransactionsOpen(false);
+    setAllBenefitsOpen(false);
+    setAllSavingsOpen(false);
+    setCompareCardsOpen(false);
     setSignedOut(false);
     setCards(initialCards);
     setMode("active");
     setThreshold(5);
     setCustomThreshold(7);
-    setTiming("after 2 minutes in store");
-    setNotifications({ website: true, "in-store": true, app: true, expiry: true, "new card suggestion": false });
+    setTiming("2 minutes");
+    setNotifications({ website: true, "in-store": true, app: true, expiry: true, "new card suggestion": true });
     setFavoriteStores(defaultFavorites.stores);
     setFavoriteCategories(defaultFavorites.categories);
     setOfferState({});
     setEventStatuses({});
     setToast("Demo reset");
-    setTinkConnected(true);
+    setBankConnected(true);
   }
 
   const missedMerchants = events.filter((event) => event.status === "missed").map((event) => event.merchant);
@@ -512,6 +725,14 @@ function useDemoState() {
     setSettingsOpen,
     cardManagerOpen,
     setCardManagerOpen,
+    transactionsOpen,
+    setTransactionsOpen,
+    allBenefitsOpen,
+    setAllBenefitsOpen,
+    allSavingsOpen,
+    setAllSavingsOpen,
+    compareCardsOpen,
+    setCompareCardsOpen,
     signedOut,
     setSignedOut,
     cards,
@@ -535,8 +756,8 @@ function useDemoState() {
     eventStatuses,
     toast,
     setToast,
-    tinkConnected,
-    setTinkConnected,
+    bankConnected,
+    setBankConnected,
     useOffer,
     activateOffer,
     snoozeOffer,
@@ -555,30 +776,34 @@ function AccountScreen({ app }: { app: DemoState }) {
       <div className="mt-4 rounded-[28px] border border-[#2d79ff]/30 bg-[#2d79ff]/12 p-5">
         <p className="text-xs text-white/52">Total balance</p>
         <p className="mt-2 text-4xl font-black tracking-normal">{eur(userProfile.totalBalance)}</p>
+        <div className="mt-4 rounded-2xl border border-white/10 bg-black/16 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase text-white/42">SAVR Difference</p>
+              <p className="mt-1 text-sm font-black text-[#7ee5a7]">{eur(transactionSavedTotal())} saved this month</p>
+            </div>
+            <button type="button" onClick={() => app.setTab("difference")} className="rounded-full bg-[#ffd347] px-3 py-1.5 text-[11px] font-black text-black">View</button>
+          </div>
+        </div>
       </div>
 
-      <SectionTitle title="Connected cards" action="Manage cards" onClick={() => app.setCardManagerOpen(true)} />
+      <SectionTitle title="Cards" action="Manage cards" onClick={() => app.setCardManagerOpen(true)} />
       <div className="grid gap-3">
         {app.cards.map((card) => (
           <CardListRow key={card.id} card={card} onClick={() => app.setModal({ type: "card", id: card.id })} />
         ))}
       </div>
 
-      <SectionTitle title="Tink-powered insight" />
-      <div className="rounded-3xl border border-white/10 bg-white/6 p-4">
-        <p className="text-sm font-bold">Top categories: fashion, groceries, delivery, transport</p>
-        <p className="mt-2 text-xs leading-5 text-white/52">SAVR uses Tink-style transaction insights to infer purchase moments and match cards, merchant offers, and issuer benefits.</p>
-      </div>
-
-      <SectionTitle title="Recent transactions" />
+      <SectionTitle title="Recent transactions" action="See all" onClick={() => app.setTransactionsOpen(true)} />
       <div className="grid gap-2">
-        {recentTransactions.map((tx) => (
-          <button key={tx.id} type="button" onClick={() => app.setModal({ type: "message", title: tx.merchant, body: `${tx.card} · ${tx.category} · ${eur(tx.amount)}. SAVR checks this pattern for future reminders.` })} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-left">
+        {recentTransactions.slice(0, 4).map((tx) => (
+          <button key={tx.id} type="button" onClick={() => app.setModal({ type: "transaction", id: tx.id })} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-left">
             <div>
               <p className="text-sm font-semibold">{tx.merchant}</p>
               <p className="text-xs text-white/42">{tx.category} · {tx.card}</p>
+              <div className="mt-1"><TransactionOutcome tx={tx} compact /></div>
             </div>
-            <span className="text-sm">{eur(tx.amount)}</span>
+            <span className="shrink-0 whitespace-nowrap text-sm">{eur(tx.amount)}</span>
           </button>
         ))}
       </div>
@@ -588,17 +813,34 @@ function AccountScreen({ app }: { app: DemoState }) {
 
 function CardListRow({ card, onClick }: { card: ConnectedCard; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="flex items-center gap-3 rounded-[22px] border border-white/10 bg-white/6 p-3 text-left transition hover:bg-white/9">
-      <div className={`grid h-10 w-12 shrink-0 place-items-center rounded-2xl text-[11px] font-black ${card.default ? "bg-[#1b67ff] text-white" : "bg-[#111318] text-white"}`}>
-        {card.network || "VISA"}
+    <button type="button" onClick={onClick} className="w-full max-w-full overflow-hidden rounded-[22px] border border-white/10 bg-white/6 p-3 text-left transition hover:bg-white/9">
+      <div className="flex items-center gap-3">
+        <div className={`grid h-10 w-12 shrink-0 place-items-center rounded-2xl text-[11px] font-black ${card.default ? "bg-[#1b67ff] text-white" : "bg-[#111318] text-white"}`}>
+          {card.network || "VISA"}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-black leading-tight">{cardDisplayName(card)}</p>
+          <p className="mt-1 truncate text-[11px] text-white/48">•••• {card.last4 || "0000"} · {card.issuer}</p>
+        </div>
+        {card.default ? <span className="shrink-0 rounded-full bg-[#ffd347] px-2 py-1 text-[10px] font-black text-black">Default</span> : null}
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-black">{card.name}</p>
-        <p className="mt-1 truncate text-xs text-white/48">•••• {card.last4 || "0000"} · {card.issuer}</p>
+      <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/34">Balance</span>
+        <span className="text-sm font-black text-white">{eur(card.balance)}</span>
       </div>
-      {card.default ? <span className="rounded-full bg-[#ffd347] px-2.5 py-1 text-[10px] font-black text-black">Default</span> : null}
     </button>
   );
+}
+
+function cardDisplayName(card: ConnectedCard) {
+  const names: Record<string, string> = {
+    intesa: "Intesa Visa Debit",
+    unicredit: "UniCredit Mastercard",
+    hype: "HYPE",
+    revolut: "Revolut",
+    paypal: "PayPal",
+  };
+  return names[card.id] || card.name;
 }
 
 function CardManagerScreen({ app }: { app: DemoState }) {
@@ -611,7 +853,6 @@ function CardManagerScreen({ app }: { app: DemoState }) {
     issuer: "",
     network: "Visa",
     cardType: "Debit",
-    billingAddress: "Milan, Italy",
   };
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<CardForm>(emptyForm);
@@ -665,16 +906,16 @@ function CardManagerScreen({ app }: { app: DemoState }) {
   const canAdd = form.cardholder.trim() && form.number.replace(/\D/g, "").length >= 12 && form.expiry.trim() && form.cvv.trim() && form.issuer.trim();
 
   return (
-    <div className="absolute inset-0 z-40 bg-[#050816]">
+    <div className="absolute inset-0 z-40 w-full max-w-full overflow-hidden bg-[#050816] [touch-action:pan-y]">
       <div className="flex items-center justify-between px-4 py-4">
         <button type="button" onClick={() => app.setCardManagerOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Back</button>
         <h2 className="text-lg font-black">Manage cards</h2>
         <button type="button" onClick={() => setAdding((current) => !current)} className="rounded-full bg-[#ffd347] px-3 py-1.5 text-sm font-black text-black">{adding ? "Close" : "Add"}</button>
       </div>
-      <div className="h-[calc(100%-72px)] overflow-y-auto px-4 pb-28">
-        <div className="grid gap-3">
+      <div className="h-[calc(100%-72px)] overflow-y-auto overflow-x-hidden px-4 pb-44 [touch-action:pan-y]">
+        <div className="grid max-w-full gap-3 overflow-hidden">
           {app.cards.map((card) => (
-            <div key={card.id} className="rounded-[24px] border border-white/10 bg-white/6 p-3">
+            <div key={card.id} className="max-w-full overflow-hidden rounded-[24px] border border-white/10 bg-white/6 p-3">
               <CardListRow card={card} onClick={() => app.setModal({ type: "card", id: card.id })} />
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <ActionButton tone={card.default ? "primary" : "secondary"} onClick={() => setDefault(card.id)}>{card.default ? "Default card" : "Set default"}</ActionButton>
@@ -699,10 +940,6 @@ function CardManagerScreen({ app }: { app: DemoState }) {
               <div className="grid grid-cols-2 gap-3">
                 <CardSelect label="Network" value={form.network} options={["Visa", "Mastercard", "Amex"]} onChange={(value) => update("network", value)} />
                 <CardSelect label="Card type" value={form.cardType} options={["Debit", "Credit", "Prepaid", "Premium"]} onChange={(value) => update("cardType", value)} />
-              </div>
-              <CardInput label="Billing address" value={form.billingAddress} placeholder="Street, city, country" onChange={(value) => update("billingAddress", value)} />
-              <div className="rounded-2xl border border-white/10 bg-white/6 p-3 text-xs leading-5 text-white/56">
-                Demo only: card data is stored locally in this browser session and no banking connection is made.
               </div>
               <ActionButton className="w-full" onClick={addCard} tone={canAdd ? "primary" : "secondary"} disabled={!canAdd}>Add card to SAVR</ActionButton>
             </div>
@@ -745,101 +982,237 @@ function CardSelect({ label, value, options, onChange }: { label: string; value:
   );
 }
 
+function TransactionsScreen({ app }: { app: DemoState }) {
+  return (
+    <div className="absolute inset-0 z-40 bg-[#050816]">
+      <div className="flex items-center justify-between px-4 py-4">
+        <button type="button" onClick={() => app.setTransactionsOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Back</button>
+        <h2 className="text-lg font-black">All transactions</h2>
+        <span className="w-[58px]" aria-hidden="true" />
+      </div>
+      <div className="h-[calc(100%-72px)] overflow-y-auto overflow-x-hidden px-4 pb-44">
+        <div className="grid gap-2">
+          {recentTransactions.map((tx) => (
+            <button key={tx.id} type="button" onClick={() => app.setModal({ type: "transaction", id: tx.id })} className="rounded-2xl border border-white/10 bg-white/6 p-4 text-left">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black">{tx.merchant}</p>
+                  <p className="mt-1 text-xs text-white/46">{tx.category}</p>
+                </div>
+                <span className="text-sm font-black">{eur(tx.amount)}</span>
+              </div>
+              <div className="mt-3 flex items-start justify-between gap-3">
+                <p className="min-w-0 flex-1 text-xs leading-4 text-white/48">{tx.card}</p>
+                <span className="shrink-0"><TransactionOutcome tx={tx} /></span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AllSavingsScreen({ app }: { app: DemoState }) {
+  const savingsRows = recentTransactions.filter((tx) => tx.savrAmount > 0);
+  return (
+    <div className="absolute inset-0 z-40 bg-[#050816] text-white">
+      <div className="flex items-center justify-between px-4 py-4">
+        <button type="button" onClick={() => app.setAllSavingsOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Back</button>
+        <h2 className="text-lg font-black">All savings</h2>
+        <span className="w-[58px]" aria-hidden="true" />
+      </div>
+      <div className="h-[calc(100%-72px)] overflow-y-auto overflow-x-hidden px-4 pb-44">
+        <div className="grid gap-3">
+          {savingsRows.map((tx) => <RecentSavingRow key={tx.id} tx={tx} app={app} />)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompareCardsScreen({ app }: { app: DemoState }) {
+  const rows = [
+    { name: "Current mix", card: "Intesa Visa Debit + HYPE", match: "Good coverage for in-store fashion and basic cashback.", value: "Current saving: EUR 29.50", tone: "default", clickable: false },
+    { name: "Recommended upgrade", card: "Visa Rewards Plus", match: "Stronger fit for fashion, delivery, and travel after your recent shift toward those categories.", value: "Potential uplift: EUR 14-22/month", tone: "gold", clickable: true },
+    { name: "Keep as backup", card: "UniCredit Mastercard", match: "Still useful for groceries and Trenitalia bookings.", value: "Best for essentials", tone: "default", clickable: false },
+  ];
+
+  return (
+    <div className="absolute inset-0 z-40 bg-[#050816] text-white">
+      <div className="flex items-center justify-between px-4 py-4">
+        <button type="button" onClick={() => app.setCompareCardsOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Back</button>
+        <h2 className="text-lg font-black">Compare cards</h2>
+        <span className="w-[58px]" aria-hidden="true" />
+      </div>
+      <div className="h-[calc(100%-72px)] overflow-y-auto overflow-x-hidden px-4 pb-44">
+        <div className="rounded-3xl border border-[#2d79ff]/30 bg-[#2d79ff]/12 p-4">
+          <p className="text-sm font-black">Shopping behaviour is shifting</p>
+          <p className="mt-2 text-xs leading-5 text-white/64">SAVR compared your recent fashion, delivery, groceries, and travel spend against your connected cards and likely reward upgrades.</p>
+        </div>
+        <div className="mt-4 grid gap-3">
+          {rows.map((row) => (
+            <button key={row.name} type="button" onClick={() => row.clickable ? app.setModal({ type: "cardRecommendation" }) : app.setModal({ type: "message", title: row.card, body: row.match })} className={`rounded-3xl border p-4 text-left ${row.tone === "gold" ? "border-[#ffd347]/35 bg-[#ffd347]/12" : "border-white/10 bg-white/6"}`}>
+              <p className="text-xs font-black uppercase tracking-[0.08em] text-white/40">{row.name}</p>
+              <p className="mt-2 text-base font-black">{row.card}</p>
+              <p className="mt-2 text-xs leading-5 text-white/62">{row.match}</p>
+              <p className={`mt-3 text-sm font-black ${row.tone === "gold" ? "text-[#ffd347]" : "text-[#7ee5a7]"}`}>{row.value}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AllBenefitsScreen({ app }: { app: DemoState }) {
+  const [filter, setFilter] = useState("All");
+  const offers = [...app.offers].sort((left, right) => offerPriority(right, app) - offerPriority(left, app));
+  const filterOptions = ["All", "Website", "In-store", "App", "Issuer benefit", "Card-linked offer", "Public promo code", "Partner offer", "Favourites"];
+  const filteredOffers = offers.filter((offer) => {
+    if (filter === "All") return true;
+    if (filter === "Favourites") return offer.favorite;
+    if (filter === "Website" || filter === "In-store" || filter === "App") return formatChannel(offer.channel) === filter;
+    return formatOfferType(offer.type) === filter;
+  });
+  const activeCount = offers.filter((offer) => offer.status !== "snoozed").length;
+  const estimatedTotal = offers.reduce((sum, offer) => sum + offer.estimatedSaving, 0);
+
+  return (
+    <div className="absolute inset-0 z-40 bg-[#050816] text-white">
+      <div className="flex items-center justify-between px-4 py-4">
+        <button type="button" onClick={() => app.setAllBenefitsOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Back</button>
+        <h2 className="text-lg font-black">All discounts</h2>
+        <span className="w-[58px]" aria-hidden="true" />
+      </div>
+      <div className="h-[calc(100%-72px)] overflow-y-auto overflow-x-hidden px-4 pb-44">
+        <div className="grid grid-cols-2 gap-3">
+          <Metric label="Available now" value={String(activeCount)} />
+          <Metric label="Tracked value" value={eur(estimatedTotal)} tone="gold" />
+        </div>
+        <SectionTitle title="Filter discounts" />
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {filterOptions.map((option) => (
+            <button key={option} type="button" onClick={() => setFilter(option)} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-bold ${filter === option ? "border-[#ffd347]/50 bg-[#ffd347]/18 text-[#ffd347]" : "border-white/10 bg-white/7 text-white/62"}`}>
+              {option}
+            </button>
+          ))}
+        </div>
+        <SectionTitle title="Aggregated offers" />
+        <div className="grid gap-3">
+          {filteredOffers.map((offer) => <OfferCard key={offer.id} offer={offer} app={app} />)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BenefitsScreen({ app }: { app: DemoState }) {
-  const reminders = app.offers
-    .filter((offer) => offer.status !== "snoozed" && offer.estimatedSaving >= app.threshold)
-    .sort((left, right) => app.scoreOffer(right.id) - app.scoreOffer(left.id))
-    .slice(0, visibleReminderCount(app.mode));
-  const passiveCopy = app.mode === "passive" ? "Passive mode keeps this available only when Francesca checks SAVR or reaches checkout." : null;
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const orderedOffers = [...app.offers].sort((left, right) => offerPriority(right, app) - offerPriority(left, app));
+  const reminders = orderedOffers
+    .filter((offer) => offer.status !== "snoozed" && offer.estimatedSaving >= app.threshold);
+  const showAll = (key: string) => {
+    setExpandedSections((current) => ({ ...current, [key]: true }));
+    app.setAllBenefitsOpen(true);
+  };
   return (
     <ScreenPad>
       <h1 className="text-2xl font-black tracking-normal">Benefits</h1>
-      <ModeNotice app={app} />
 
-      <SectionTitle title="Recommended for Francesca" />
-      <div className="grid gap-3">{reminders.map((offer) => <OfferCard key={offer.id} offer={offer} app={app} />)}</div>
+      <BenefitOfferSection
+        title="Recommended for you"
+        offers={reminders}
+        app={app}
+        expanded={expandedSections.recommended}
+        limit={visibleReminderCount(app.mode)}
+        onShowAll={() => showAll("recommended")}
+      />
 
-      <SectionTitle title="Website reminder enabled" />
-      <ReminderCard title={app.mode === "active" ? "Zara checkout detected" : "Zara saving available if checked"} body={`${passiveCopy || "SAVR recommends Revolut + code SAVE10."} Minimum saving threshold: EUR ${app.threshold}.`} actions={[
-        ["Copy code", () => navigator.clipboard?.writeText("SAVE10").then(() => app.setToast("SAVE10 copied")).catch(() => app.setToast("SAVE10 copied"))],
-        ["Apply demo saving", () => app.useOffer("zara-revolut")],
-        ["Snooze", () => app.setModal({ type: "snooze", id: "zara-revolut" })],
-        ["Open Zara", () => openExternal("zara")],
-      ]} />
-
-      {app.mode === "active" ? (
-        <>
-          <SectionTitle title="Nearby offer detected" />
-          <ReminderCard title="Nike Milano" body={`Use Intesa Visa for 8% cashback. Timing: ${app.timing}.`} actions={[
-            ["Show QR", () => app.setModal({ type: "offer", id: "nike-intesa", action: "use" })],
-            ["Mark as used", () => app.useOffer("nike-intesa")],
-            ["Snooze", () => app.setModal({ type: "snooze", id: "nike-intesa" })],
-            ["Open map", () => app.setModal({ type: "message", title: "Demo location", body: "Nike Milano geo-fence opened in simulated map view." })],
-          ]} />
-        </>
-      ) : (
-        <>
-          <SectionTitle title="In-store reminders" />
-          <ReminderCard title="Nearby offers paused" body="Nike Milano and Sephora in-store reminders are available if Francesca opens SAVR. Switch to Active mode for proactive geo-fenced alerts." actions={[
-            ["Switch active", () => app.setMode("active")],
-            ["Check Nike", () => app.setModal({ type: "offer", id: "nike-intesa", action: "details" })],
-          ]} />
-        </>
-      )}
-
-      <SectionTitle title="Merchant offers" />
-      <div className="grid gap-3">{app.offers.filter((offer) => offer.type !== "issuer benefit").map((offer) => <OfferCard key={offer.id} offer={offer} app={app} />)}</div>
-
-      <SectionTitle title="Issuer benefits" />
-      <div className="grid gap-3">{app.offers.filter((offer) => offer.type === "issuer benefit").map((offer) => <OfferCard key={offer.id} offer={offer} app={app} />)}</div>
-
-      <SectionTitle title="Expiring soon" />
-      <div className="grid gap-3">{app.offers.filter((offer) => offer.status === "expiring soon").map((offer) => <OfferCard key={offer.id} offer={offer} app={app} />)}</div>
-
-      <SectionTitle title="Favorite stores" />
-      <div className="flex flex-wrap gap-2">{app.favoriteStores.map((store) => <button key={store} type="button" onClick={() => app.setFavoriteStores(app.favoriteStores.filter((item) => item !== store))} className="rounded-full bg-[#ffd347]/14 px-3 py-2 text-xs text-[#ffd347]">{store}</button>)}</div>
-
-      <SectionTitle title="AR Store Scanner" />
-      <div className="rounded-3xl border border-white/10 bg-white/6 p-4">
-        <p className="text-sm text-white/64">Simulated camera view detects card-linked benefits on shelves and storefronts.</p>
-        <ActionButton className="mt-3 w-full" onClick={() => app.setModal({ type: "ar" })}>Open AR Scanner</ActionButton>
-      </div>
+      <BenefitOfferSection title="In-store saving nearby" offers={orderedOffers.filter((offer) => offer.channel === "in-store")} app={app} expanded={expandedSections.inStore} onShowAll={() => showAll("inStore")} />
+      <BenefitOfferSection title="Expiring soon" offers={orderedOffers.filter((offer) => isExpiryReminder(offer))} app={app} expanded={expandedSections.expiring} onShowAll={() => showAll("expiring")} />
+      <BenefitOfferSection title="Favourited offers" offers={orderedOffers.filter((offer) => offer.favorite)} app={app} expanded={expandedSections.favourites} onShowAll={() => showAll("favourites")} />
     </ScreenPad>
+  );
+}
+
+function BenefitOfferSection({
+  title,
+  offers,
+  app,
+  expanded,
+  limit = 2,
+  onShowAll,
+}: {
+  title: string;
+  offers: ReturnType<typeof useDemoState>["offers"];
+  app: DemoState;
+  expanded?: boolean;
+  limit?: number;
+  onShowAll: () => void;
+}) {
+  const visibleOffers = expanded ? offers : offers.slice(0, limit);
+  return (
+    <>
+      <SectionTitle title={title} action="See all" onClick={onShowAll} />
+      {visibleOffers.length ? (
+        <div className="grid gap-3">{visibleOffers.map((offer) => <OfferCard key={offer.id} offer={offer} app={app} />)}</div>
+      ) : (
+        <div className="rounded-3xl border border-white/10 bg-white/6 p-4 text-sm text-white/58">No offers here right now.</div>
+      )}
+    </>
   );
 }
 
 function OfferCard({ offer, app }: { offer: ReturnType<typeof useDemoState>["offers"][number]; app: DemoState }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/6 p-4">
-      <div className="flex items-start gap-3">
+    <div className="max-w-full overflow-hidden rounded-3xl border border-white/10 bg-white/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+      <button type="button" onClick={() => app.setModal({ type: "offer", id: offer.id, action: "details" })} className="flex w-full min-w-0 items-start gap-3 text-left">
         <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[#2d79ff] to-[#ffd347] text-sm font-black text-[#06101e]">{offer.merchant.slice(0, 2).toUpperCase()}</div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div>
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+            <div className="min-w-0">
               <p className="font-bold">{offer.merchant}</p>
-              <p className="mt-1 text-xs text-white/54">{offer.title}</p>
             </div>
-            <p className="text-sm font-black text-[#7ee5a7]">{eur(offer.estimatedSaving)}</p>
+            <p className="max-w-[104px] truncate rounded-full border border-[#7ee5a7]/25 bg-[#7ee5a7]/12 px-2.5 py-1 text-center text-[10px] font-black leading-none text-[#7ee5a7]">{offerValueLabel(offer)}</p>
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <Pill tone="blue">{offer.type}</Pill>
-            <Pill>{offer.channel}</Pill>
-            <Pill tone={offer.status === "expiring soon" ? "gold" : offer.status === "active" ? "green" : "default"}>{offer.status}</Pill>
-            {offer.favorite && <Pill tone="gold">favorite</Pill>}
-            {offer.activated && <Pill tone="blue">activated</Pill>}
-            {offer.used && <Pill tone="green">used</Pill>}
+            <Pill tone="blue">{formatOfferType(offer.type)}</Pill>
+            <Pill>{formatChannel(offer.channel)}</Pill>
           </div>
-          <p className="mt-3 text-xs text-white/48">Best card: {offer.bestCard} · score {app.scoreOffer(offer.id)} · expires {offer.expiry}</p>
+          <div className="mt-3 grid gap-1 text-xs text-white/48">
+            <p className="truncate">Best card: {offer.bestCard}</p>
+            <p className="truncate">Expires: {offer.expiry}</p>
+          </div>
         </div>
-      </div>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <ActionButton onClick={() => app.setModal({ type: "offer", id: offer.id, action: "use" })}>Use</ActionButton>
-        <ActionButton tone="secondary" onClick={() => app.setModal({ type: "offer", id: offer.id, action: "activate" })}>Activate</ActionButton>
-        <ActionButton tone="quiet" onClick={() => app.setModal({ type: "snooze", id: offer.id })}>Snooze</ActionButton>
-        <ActionButton tone="quiet" onClick={() => app.favoriteOffer(offer.id)}>{offer.favorite ? "Unfavorite" : "Favorite"}</ActionButton>
-        <ActionButton className="col-span-2" tone="quiet" onClick={() => app.setModal({ type: "offer", id: offer.id, action: "details" })}>Details</ActionButton>
+      </button>
+      <div className="mt-4">
+        <OfferActionButton className="w-full" tone={offerRequiresActivation(offer) ? "secondary" : "primary"} onClick={() => handleOfferPrimary(offer, app)}>{offerRequiresActivation(offer) ? "Activate" : "Use"}</OfferActionButton>
       </div>
     </div>
+  );
+}
+
+function OfferActionButton({
+  children,
+  onClick,
+  tone = "default",
+  className = "",
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  tone?: "default" | "primary" | "secondary";
+  className?: string;
+}) {
+  const styles = {
+    default: "border-white/10 bg-white/7 text-white/78 hover:bg-white/11",
+    primary: "border-[#2d79ff]/40 bg-[#2d79ff]/18 text-white hover:bg-[#2d79ff]/26",
+    secondary: "border-[#ffd347]/35 bg-[#ffd347]/14 text-[#ffd347] hover:bg-[#ffd347]/20",
+  };
+  return (
+    <button type="button" onClick={onClick} className={`min-w-0 rounded-2xl border px-3 py-2.5 text-xs font-black transition active:scale-[0.98] ${styles[tone]} ${className}`}>
+      <span className="block truncate">{children}</span>
+    </button>
   );
 }
 
@@ -854,55 +1227,25 @@ function ReminderCard({ title, body, actions }: { title: string; body: string; a
 }
 
 function DifferenceScreen({ app }: { app: DemoState }) {
-  const correctedValue = initialSavingsEvents
-    .filter((event) => app.eventStatuses[event.id] === "corrected" && event.status === "missed")
-    .reduce((sum, event) => sum + event.amount, 0);
-  const usedOfferValue = app.offers.filter((offer) => offer.used).reduce((sum, offer) => sum + offer.estimatedSaving, 0);
-  const saved = baselineSavedThisMonth + correctedValue + usedOfferValue;
-  const missed = Math.max(0, baselineMissedThisMonth - correctedValue);
-  const filterOptions: SavingsStatus[] = ["saved", "missed", "corrected", "expiring"];
-  const [filter, setFilter] = useState<SavingsStatus | "all">("all");
-  const visible = filter === "all" ? app.events : app.events.filter((event) => event.status === filter);
+  const savedTransactions = recentTransactions.filter((tx) => tx.savrStatus === "saved" && tx.savrAmount > 0);
+  const missedTransactions = recentTransactions.filter((tx) => tx.savrStatus === "missed" && tx.savrAmount > 0);
+  const saved = transactionSavedTotal();
+  const missed = missedTransactions.reduce((sum, tx) => sum + tx.savrAmount, 0);
 
   return (
     <ScreenPad>
       <h1 className="text-2xl font-black tracking-normal">SAVR Difference</h1>
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <Metric label="Money saved" value={eur(saved || 318.9)} />
-        <Metric label="Missed savings" value={eur(missed || 120)} tone="gold" />
-        <Metric label="Offers used" value={String(8 + app.offers.filter((offer) => offer.used).length)} />
-        <Metric label="Offers missed" value="5" tone="gold" />
-      </div>
-      <div className="mt-4 rounded-3xl border border-white/10 bg-white/6 p-4">
-        <div className="flex justify-between text-xs text-white/52"><span>Saved</span><span>Missed</span></div>
-        <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#ffd347]/18"><div className="h-full rounded-full bg-[#2d79ff]" style={{ width: `${Math.min(82, (saved / Math.max(saved + missed, 1)) * 100)}%` }} /></div>
+        <Metric label="Money saved" value={eur(saved)} />
+        <Metric label="Missed savings" value={eur(missed)} tone="gold" />
+        <Metric label="Offers used" value={String(savedTransactions.length)} />
+        <Metric label="Offers missed" value={String(missedTransactions.length)} tone="gold" />
       </div>
       <SectionTitle title="Breakdown by category" />
-      <Breakdown labels={["Fashion", "Groceries", "Food delivery", "Transport", "Subscriptions", "Beauty"]} />
-      <SectionTitle title="Breakdown by source" />
-      <Breakdown labels={["issuer benefits", "merchant offers", "public promo codes", "card recommendations"]} />
-      <SectionTitle title="Timeline" />
-      <div className="mb-3 flex flex-wrap gap-2">
-        {["all", ...filterOptions].map((item) => <button key={item} type="button" onClick={() => setFilter(item as SavingsStatus | "all")} className={`rounded-full px-3 py-1.5 text-xs ${filter === item ? "bg-white text-black" : "bg-white/8 text-white/60"}`}>{item}</button>)}
-      </div>
+      <CategoryBreakdown />
+      <SectionTitle title="Recent savings" action="See all" onClick={() => app.setAllSavingsOpen(true)} />
       <div className="grid gap-3">
-        {visible.map((event) => (
-          <div key={event.id} className="rounded-2xl border border-white/10 bg-white/6 p-4 text-left">
-            <div className="flex items-start justify-between gap-3">
-              <button type="button" onClick={() => app.setModal({ type: "event", id: event.id })} className="min-w-0 flex-1 text-left">
-                <p className="font-semibold">{event.merchant}</p>
-                <p className="mt-1 text-xs text-white/46">{event.description}</p>
-              </button>
-              <Pill tone={event.status === "missed" || event.status === "expiring" ? "gold" : "green"}>{event.status}</Pill>
-            </div>
-            <div className="mt-3 flex gap-2">
-              <ActionButton tone="secondary" onClick={() => app.correctEvent(event.id)}>Mark corrected</ActionButton>
-              <ActionButton tone="quiet" onClick={() => app.setModal({ type: "receipt", id: event.id, mode: "upload" })}>Add receipt</ActionButton>
-              <ActionButton tone="quiet" onClick={() => app.setModal({ type: "receipt", id: event.id, mode: "manual" })}>Manual</ActionButton>
-              <ActionButton tone="quiet" onClick={() => app.setTab("advisor")}>View recommendation</ActionButton>
-            </div>
-          </div>
-        ))}
+        {recentTransactions.filter((tx) => tx.savrAmount > 0).slice(0, 4).map((tx) => <RecentSavingRow key={tx.id} tx={tx} app={app} />)}
       </div>
     </ScreenPad>
   );
@@ -912,47 +1255,115 @@ function Metric({ label, value, tone = "blue" }: { label: string; value: string;
   return <div className="rounded-3xl border border-white/10 bg-white/6 p-4"><p className="text-xs text-white/46">{label}</p><p className={`mt-2 text-xl font-black tracking-normal ${tone === "gold" ? "text-[#ffd347]" : "text-white"}`}>{value}</p></div>;
 }
 
-function Breakdown({ labels }: { labels: string[] }) {
+function CategoryBreakdown() {
+  const categories = ["Fashion", "Groceries", "Food delivery", "Transport", "Subscriptions", "Beauty"];
+  const values = categories.map((category) => ({
+    category,
+    saved: recentTransactions
+      .filter((tx) => tx.category === category && tx.savrStatus === "saved")
+      .reduce((sum, tx) => sum + tx.savrAmount, 0),
+    missed: recentTransactions
+      .filter((tx) => tx.category === category && tx.savrStatus === "missed")
+      .reduce((sum, tx) => sum + tx.savrAmount, 0),
+  }));
+  const max = Math.max(...values.map((item) => item.saved + item.missed), 1);
+
   return (
-    <div className="grid gap-2">
-      {labels.map((label, index) => (
-        <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-3">
-          <div className="flex justify-between text-xs"><span>{label}</span><span>{Math.max(18, 76 - index * 11)}%</span></div>
-          <div className="mt-2 h-2 rounded-full bg-white/8"><div className="h-full rounded-full bg-gradient-to-r from-[#2d79ff] to-[#ffd347]" style={{ width: `${Math.max(18, 76 - index * 11)}%` }} /></div>
+    <div className="rounded-[28px] border border-white/10 bg-white/6 p-4">
+      <div className="grid gap-4">
+        {values.map(({ category, saved, missed }) => {
+          const total = saved + missed;
+          const savedWidth = total ? (saved / max) * 100 : 0;
+          const missedWidth = total ? (missed / max) * 100 : 0;
+          return (
+          <div key={category}>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-lg font-black tracking-normal">{category}</p>
+              <p className="shrink-0 text-sm font-black text-white/58"><span className="text-[#2d79ff]">{eur(saved)}</span> <span className="text-[#ffd347]">+{eur(missed)}</span></p>
+            </div>
+            <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/8">
+              <div className="flex h-full">
+                <div className="h-full bg-[#2d79ff]" style={{ width: `${savedWidth}%` }} />
+                <div className="h-full bg-[#ffd347]" style={{ width: `${missedWidth}%` }} />
+              </div>
+            </div>
+          </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function RecentSavingRow({ tx, app }: { tx: (typeof recentTransactions)[number]; app: DemoState }) {
+  const missed = tx.savrStatus === "missed";
+  return (
+    <button type="button" onClick={() => app.setModal({ type: "transaction", id: tx.id })} className="rounded-2xl border border-white/10 bg-white/6 p-4 text-left">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-black">{tx.merchant}</p>
+          <p className="mt-1 truncate text-xs text-white/46">{tx.category} · {tx.card}</p>
         </div>
-      ))}
+        <div className="shrink-0 text-right">
+          <p className={`text-sm font-black ${missed ? "text-[#ff8f80]" : "text-[#7ee5a7]"}`}>{missed ? "-" : "+"}{eur(tx.savrAmount)}</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white/34">{missed ? "Missed" : "Saved"}</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function InsightCard({
+  title,
+  body,
+  action,
+  onClick,
+}: {
+  title: string;
+  body: string;
+  action: string;
+  onClick: () => void;
+}) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/6 p-4">
+      <p className="text-sm font-black">{title}</p>
+      <p className="mt-2 text-xs leading-5 text-white/62">{body}</p>
+      <ActionButton className="mt-3 w-full" tone="secondary" onClick={onClick}>{action}</ActionButton>
     </div>
   );
 }
 
 function AdvisorScreen({ app }: { app: DemoState }) {
-  const [messages, setMessages] = useState<Array<{ who: "user" | "savr"; text: string }>>([
-    { who: "savr", text: "Ask me which card, benefit, or offer Francesca should use before paying." },
-  ]);
-
-  function answer(prompt: string) {
-    const zara = bestOfferForMerchant({ merchant: "Zara", mode: app.mode, threshold: app.threshold, favoriteStores: app.favoriteStores, favoriteCategories: app.favoriteCategories, missedMerchants: app.missedMerchants });
-    const responses: Record<string, string> = {
-      "Best card for Zara": `For Zara, use your Revolut Card and apply code SAVE10. Estimated saving: ${eur(zara?.estimatedSaving || 7.5)}. If the public code fails, HYPE has a fallback cashback offer.`,
-      "Best card for groceries": "Use UniCredit Mastercard at Esselunga. It matches your grocery pattern and beats your current threshold when baskets exceed EUR 60.",
-      "Where did I miss savings?": "You missed EUR 120 this month, mainly from fashion and delivery. The biggest missed opportunities were SHEIN cashback, Glovo free delivery, and one Sephora expiring offer.",
-      "Benefits expiring soon": "Sephora expires tomorrow and UniCredit travel rewards expire soon. Active mode can remind you before checkout.",
-      "New card suggestions": "Based on recurring fashion, groceries, and delivery spend, SAVR suggests comparing cards with stronger fashion cashback and delivery benefits. Estimated incremental monthly saving: EUR 14-22.",
-      "Ask SAVR through ChatGPT": "@SAVR what card should I use at Zara? Use Revolut + SAVE10 today. Estimated saving: EUR 7.50. I can also remind you before checkout.",
-    };
-    setMessages((current) => [...current, { who: "user", text: prompt }, { who: "savr", text: responses[prompt] }]);
-  }
-
   return (
     <ScreenPad>
       <h1 className="text-2xl font-black tracking-normal">Personal Advisor</h1>
-      <div className="mt-4 grid gap-2">
-        {messages.map((message, index) => (
-          <div key={`${message.who}-${index}`} className={`max-w-[88%] rounded-3xl p-3 text-sm leading-6 ${message.who === "user" ? "ml-auto bg-[#2d79ff] text-white" : "bg-white/8 text-white/70"}`}>{message.text}</div>
-        ))}
+      <SectionTitle title="SAVR insights" />
+      <div className="grid gap-3">
+        <InsightCard
+          title="Fashion is where you miss most"
+          body="Your missed savings are concentrated in fashion purchases, especially SHEIN and Sephora. Keep fashion alerts active before online checkout."
+          action="View fashion offers"
+          onClick={() => app.setTab("benefits")}
+        />
+        <InsightCard
+          title="Your favourite categories are shifting"
+          body="You have recently spent more on shoes and sportswear. Add Nike and footwear to your favourites so SAVR can prioritise those offers."
+          action="Edit favourites"
+          onClick={() => app.setModal({ type: "settings", section: "Favourites" })}
+        />
+        <InsightCard
+          title="Last month was strong"
+          body="You captured most available savings on groceries, transport, and Zara checkout. Your biggest opportunity is still activating benefits before paying."
+          action="Review savings"
+          onClick={() => app.setTab("difference")}
+        />
+        <InsightCard
+          title="Card recommendation"
+          body="Your spending is moving toward fashion and delivery. A stronger Visa rewards card could improve your monthly saving potential by about EUR 14-22."
+          action="Compare cards"
+          onClick={() => app.setCompareCardsOpen(true)}
+        />
       </div>
-      <SectionTitle title="Quick actions" />
-      <div className="grid gap-2">{advisorPrompts.map((prompt) => <button key={prompt} type="button" onClick={() => answer(prompt)} className="rounded-2xl border border-white/10 bg-white/6 p-3 text-left text-sm">{prompt}</button>)}</div>
       <SectionTitle title="Third-party AI plug-in" />
       <div className="grid grid-cols-2 gap-2">
         {[
@@ -967,56 +1378,114 @@ function AdvisorScreen({ app }: { app: DemoState }) {
 }
 
 function SettingsScreen({ app }: { app: DemoState }) {
-  const rows = ["Account details", "Connected cards", "Favorite stores", "Favorite categories", "Alert preferences", "Third-party AI plug-in settings", "AR scanner preferences", "Notification settings", "Privacy / data permissions", "Help & support", "Terms and privacy", "Partners & links"];
+  const rows = ["Account details", "Cards", "Favorite stores", "Favorite categories", "Alert preferences", "Notification settings", "Privacy / data permissions", "Help & support", "Terms and privacy"];
+  function openRow(row: string) {
+    if (row === "Cards") {
+      app.setSettingsOpen(false);
+      app.setCardManagerOpen(true);
+      return;
+    }
+    app.setModal({ type: "settings", section: row });
+  }
   return (
     <div className="absolute inset-0 z-40 bg-[#050816]">
       <div className="flex items-center justify-between px-4 py-4">
         <h2 className="text-xl font-black">Profile</h2>
         <button type="button" onClick={() => app.setSettingsOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Close</button>
       </div>
-      <div className="h-[calc(100%-72px)] overflow-y-auto px-4 pb-24">
+      <div className="h-[calc(100%-72px)] overflow-y-auto overflow-x-hidden px-4 pb-44">
         <div className="rounded-3xl border border-white/10 bg-white/6 p-4">
           <div className="flex items-center gap-3">
             <div className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-[#2d79ff] to-[#ffd347] font-black text-black">FL</div>
-            <div><p className="font-bold">{userProfile.name}</p><p className="text-xs text-white/48">{userProfile.location} · {userProfile.profile}</p></div>
+            <div><p className="font-bold">{userProfile.name}</p></div>
           </div>
         </div>
-        <SectionTitle title="SAVR mode" />
-        <div className="grid grid-cols-2 gap-2">
-          <ActionButton onClick={() => app.setMode("active")} tone={app.mode === "active" ? "primary" : "secondary"}>Active</ActionButton>
-          <ActionButton onClick={() => app.setMode("passive")} tone={app.mode === "passive" ? "primary" : "secondary"}>Passive</ActionButton>
-        </div>
-        <p className="mt-3 text-xs leading-5 text-white/48">{app.mode === "active" ? "SAVR proactively surfaces offers at favorite stores, nearby stores, and likely spending moments." : "SAVR only reminds at checkout or when Francesca directly checks SAVR."}</p>
-        <SectionTitle title="Threshold" />
-        <div className="grid grid-cols-4 gap-2">
-          {thresholdOptions.map((value) => <ActionButton key={value} tone={app.threshold === value ? "primary" : "secondary"} onClick={() => app.setThreshold(value)}>EUR {value}</ActionButton>)}
-          <ActionButton tone="secondary" onClick={() => app.setThreshold(app.customThreshold)}>Custom</ActionButton>
-        </div>
-        <input type="range" min={1} max={20} value={app.customThreshold} onChange={(event) => app.setCustomThreshold(Number(event.target.value))} className="mt-3 w-full" />
-        <p className="text-xs text-white/46">Custom threshold: EUR {app.customThreshold}</p>
-        <SectionTitle title="Timing" />
-        <div className="grid gap-2">{timingOptions.map((item) => <button key={item} type="button" onClick={() => app.setTiming(item)} className={`rounded-2xl border p-3 text-left text-sm ${app.timing === item ? "border-[#ffd347] bg-[#ffd347]/12" : "border-white/10 bg-white/6"}`}>{item}</button>)}</div>
-        <SectionTitle title="Notification types" />
-        <div className="grid gap-2">{notificationTypes.map((item) => <ToggleRow key={item} label={item} active={app.notifications[item]} onClick={() => app.setNotifications({ ...app.notifications, [item]: !app.notifications[item] })} />)}</div>
         <SectionTitle title="Settings" />
-        <div className="grid gap-2">{rows.map((row) => <button key={row} type="button" onClick={() => app.setModal({ type: "settings", section: row })} className="rounded-2xl border border-white/10 bg-white/6 p-3 text-left text-sm">{row}</button>)}</div>
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <ActionButton tone="secondary" onClick={app.resetDemo}>Reset demo</ActionButton>
-          <ActionButton tone="danger" onClick={() => app.setModal({ type: "logout" })}>Log out</ActionButton>
-        </div>
+        <div className="grid gap-2">{rows.map((row) => <button key={row} type="button" onClick={() => openRow(row)} className="rounded-2xl border border-white/10 bg-white/6 p-3 text-left text-sm">{row}</button>)}</div>
+        <ActionButton className="mt-4 w-full" tone="danger" onClick={() => app.setModal({ type: "logout" })}>Log out</ActionButton>
       </div>
     </div>
   );
 }
 
 function SettingsSubScreen({ section, app, close }: { section: string; app: DemoState; close: () => void }) {
+  if (section === "Account details") {
+    return (
+      <SheetSection title="Account details">
+        <AccountDetailsForm close={close} />
+      </SheetSection>
+    );
+  }
+  if (section === "Alert preferences") {
+    const timingIndex = Math.max(0, timingOptions.indexOf(app.timing));
+    return (
+      <SheetSection title="Alert preferences">
+        <SectionTitle title="SAVR mode" />
+        <div className="grid grid-cols-2 gap-2">
+          <ActionButton onClick={() => app.setMode("active")} tone={app.mode === "active" ? "primary" : "secondary"}>Active</ActionButton>
+          <ActionButton onClick={() => app.setMode("passive")} tone={app.mode === "passive" ? "primary" : "secondary"}>Passive</ActionButton>
+        </div>
+        <p className="mt-3 text-xs leading-5 text-white/48">{app.mode === "active" ? "SAVR proactively surfaces offers at your favorite stores, nearby stores, and likely spending moments." : "SAVR only reminds you at checkout or when you directly check SAVR."}</p>
+        <SectionTitle title="Threshold" />
+        <input type="range" min={1} max={20} value={app.threshold} onChange={(event) => { const value = Number(event.target.value); app.setThreshold(value); app.setCustomThreshold(value); }} className="w-full accent-[#9dccff]" />
+        <p className="mt-2 text-sm text-white/82">Custom threshold: EUR {app.threshold}</p>
+        <SectionTitle title="Timing" />
+        <input type="range" min={0} max={timingOptions.length - 1} value={timingIndex} onChange={(event) => app.setTiming(timingOptions[Number(event.target.value)])} className="w-full accent-[#9dccff]" />
+        <p className="mt-2 text-sm text-white/82">Timing: {app.timing}</p>
+        <ActionButton className="mt-4 w-full" onClick={close}>Save alert preferences</ActionButton>
+      </SheetSection>
+    );
+  }
+  if (section === "Notification settings") {
+    return (
+      <SheetSection title="Notification settings">
+        <div className="grid gap-2">{notificationTypes.map((item) => <ToggleRow key={item} label={item} active={app.notifications[item]} onClick={() => app.setNotifications({ ...app.notifications, [item]: !app.notifications[item] })} />)}</div>
+      </SheetSection>
+    );
+  }
+  if (section === "Privacy / data permissions") {
+    return (
+      <SheetSection title="Privacy / data permissions">
+        <p className="text-sm leading-6 text-white/66">Review how SAVR uses card, transaction, offer, and notification data.</p>
+        <ActionButton className="mt-4 w-full" onClick={() => undefined}>Open privacy page</ActionButton>
+      </SheetSection>
+    );
+  }
+  if (section === "Help & support") {
+    return (
+      <SheetSection title="Help & support">
+        <p className="text-sm leading-6 text-white/66">Get support for cards, offers, notifications, account access, and savings corrections.</p>
+        <ActionButton className="mt-4 w-full" onClick={() => undefined}>Open help centre</ActionButton>
+      </SheetSection>
+    );
+  }
+  if (section === "Terms and privacy") {
+    return (
+      <SheetSection title="Terms and privacy">
+        <p className="text-sm leading-6 text-white/66">Read SAVR terms, privacy notice, cookie settings, and card-linking conditions.</p>
+        <ActionButton className="mt-4 w-full" onClick={() => undefined}>Open terms page</ActionButton>
+      </SheetSection>
+    );
+  }
+  if (section === "Favourites") {
+    const stores = ["Zara", "Nike", "Esselunga", "Glovo", "SHEIN", "Sephora", "Trenitalia"];
+    const categories = ["Fashion", "Groceries", "Food delivery", "Transport", "Beauty", "Travel", "Subscriptions", "Footwear"];
+    return (
+      <SheetSection title="Edit favourites">
+        <SectionTitle title="Favorite stores" />
+        <EditablePills values={stores} selected={app.favoriteStores} setSelected={app.setFavoriteStores} addLabel="Add store" />
+        <SectionTitle title="Favorite categories" />
+        <EditablePills values={categories} selected={app.favoriteCategories} setSelected={app.setFavoriteCategories} addLabel="Add category" />
+      </SheetSection>
+    );
+  }
   if (section === "Favorite stores") {
     const all = ["Zara", "Nike", "Esselunga", "Glovo", "SHEIN", "Sephora", "Trenitalia"];
-    return <SheetSection title={section}><EditablePills values={all} selected={app.favoriteStores} setSelected={app.setFavoriteStores} /></SheetSection>;
+    return <SheetSection title={section}><EditablePills values={all} selected={app.favoriteStores} setSelected={app.setFavoriteStores} addLabel="Add store" /></SheetSection>;
   }
   if (section === "Favorite categories") {
-    const all = ["Fashion", "Groceries", "Food delivery", "Transport", "Beauty", "Travel", "Subscriptions"];
-    return <SheetSection title={section}><EditablePills values={all} selected={app.favoriteCategories} setSelected={app.setFavoriteCategories} /></SheetSection>;
+    const all = ["Fashion", "Groceries", "Food delivery", "Transport", "Beauty", "Travel", "Subscriptions", "Footwear"];
+    return <SheetSection title={section}><EditablePills values={all} selected={app.favoriteCategories} setSelected={app.setFavoriteCategories} addLabel="Add category" /></SheetSection>;
   }
   if (section === "Partners & links" || section === "Terms and privacy") {
     return (
@@ -1029,19 +1498,64 @@ function SettingsSubScreen({ section, app, close }: { section: string; app: Demo
   }
   return (
     <SheetSection title={section}>
-      <p className="text-sm leading-6 text-white/66">{section} updated in the demo. This screen simulates the production settings flow inside the phone.</p>
+      <p className="text-sm leading-6 text-white/66">Update your {section.toLowerCase()} preferences here.</p>
       <ActionButton className="mt-4 w-full" onClick={() => { app.setToast(`${section} saved`); close(); }}>Save demo preference</ActionButton>
     </SheetSection>
   );
 }
 
-function EditablePills({ values, selected, setSelected }: { values: string[]; selected: string[]; setSelected: (values: string[]) => void }) {
+function AccountDetailsForm({ close }: { close: () => void }) {
+  const [details, setDetails] = useState({
+    name: userProfile.name,
+    email: "francesca.liberatore@example.com",
+    phone: "+39 333 482 1190",
+    dob: "14/09/2001",
+    address: "Via Torino 24",
+    city: "Milan",
+    postalCode: "20123",
+    country: "Italy",
+    residency: "Italy",
+  });
+  const update = (key: keyof typeof details, value: string) => setDetails((current) => ({ ...current, [key]: value }));
   return (
-    <div className="flex flex-wrap gap-2">
-      {values.map((value) => {
-        const active = selected.includes(value);
-        return <button key={value} type="button" onClick={() => setSelected(active ? selected.filter((item) => item !== value) : [...selected, value])} className={`rounded-full px-3 py-2 text-xs ${active ? "bg-[#ffd347] text-black" : "bg-white/8 text-white/60"}`}>{value}</button>;
-      })}
+    <>
+      <div className="grid gap-3">
+        <CardInput label="Full name" value={details.name} placeholder="Full name" onChange={(value) => update("name", value)} />
+        <CardInput label="Email" value={details.email} placeholder="Email" onChange={(value) => update("email", value)} />
+        <CardInput label="Phone" value={details.phone} placeholder="Phone" onChange={(value) => update("phone", value)} />
+        <CardInput label="Date of birth" value={details.dob} placeholder="DD/MM/YYYY" onChange={(value) => update("dob", value)} />
+        <CardInput label="Street address" value={details.address} placeholder="Street address" onChange={(value) => update("address", value)} />
+        <CardInput label="City" value={details.city} placeholder="City" onChange={(value) => update("city", value)} />
+        <CardInput label="Postal code" value={details.postalCode} placeholder="Postal code" onChange={(value) => update("postalCode", value)} />
+        <CardInput label="Country" value={details.country} placeholder="Country" onChange={(value) => update("country", value)} />
+        <CardInput label="Tax residency" value={details.residency} placeholder="Country" onChange={(value) => update("residency", value)} />
+      </div>
+      <ActionButton className="mt-4 w-full" onClick={close}>Save account details</ActionButton>
+    </>
+  );
+}
+
+function EditablePills({ values, selected, setSelected, addLabel }: { values: string[]; selected: string[]; setSelected: (values: string[]) => void; addLabel: string }) {
+  const [draft, setDraft] = useState("");
+  const options = Array.from(new Set([...values, ...selected]));
+  function addValue() {
+    const value = draft.trim();
+    if (!value) return;
+    setSelected(selected.includes(value) ? selected : [...selected, value]);
+    setDraft("");
+  }
+  return (
+    <div>
+      <div className="flex flex-wrap gap-2">
+        {options.map((value) => {
+          const active = selected.includes(value);
+          return <button key={value} type="button" onClick={() => setSelected(active ? selected.filter((item) => item !== value) : [...selected, value])} className={`rounded-full px-3 py-2 text-xs ${active ? "bg-[#ffd347] text-black" : "bg-white/8 text-white/60"}`}>{value}</button>;
+        })}
+      </div>
+      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+        <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={addLabel} className="min-w-0 rounded-2xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#2d79ff]" />
+        <ActionButton tone="secondary" onClick={addValue}>Add</ActionButton>
+      </div>
     </div>
   );
 }
@@ -1055,12 +1569,8 @@ function ToggleRow({ label, active, onClick }: { label: string; active: boolean;
   );
 }
 
-function ModeNotice({ app }: { app: DemoState }) {
-  return <div className="mt-4 rounded-2xl border border-white/10 bg-white/6 p-3 text-xs leading-5 text-white/60">{app.mode === "active" ? "Active mode: proactive reminders at favorite stores, nearby stores, and likely spending moments." : "Passive mode: only checkout and direct SAVR checks are shown."}</div>;
-}
-
 function ScreenPad({ children }: { children: React.ReactNode }) {
-  return <div className="px-4 pb-44 pt-1">{children}</div>;
+  return <div className="w-full max-w-full overflow-x-hidden px-4 pb-44 pt-1 [touch-action:pan-y]">{children}</div>;
 }
 
 function SectionTitle({ title, action, onClick }: { title: string; action?: string; onClick?: () => void }) {
@@ -1078,8 +1588,55 @@ function LockedState({ app }: { app: DemoState }) {
       <div>
         <SavrLogo />
         <h1 className="mt-8 text-2xl font-black">Signed out</h1>
-        <p className="mt-3 text-sm leading-6 text-white/58">Francesca is logged out of the demo phone.</p>
-        <ActionButton className="mt-6 w-full" onClick={() => { app.setSignedOut(false); app.setToast("Returned to demo"); }}>Return to demo</ActionButton>
+        <p className="mt-3 text-sm leading-6 text-white/58">You are signed out of SAVR on this phone.</p>
+        <ActionButton className="mt-6 w-full" onClick={() => { app.setSignedOut(false); app.setToast("Welcome back"); }}>Return to SAVR</ActionButton>
+      </div>
+    </div>
+  );
+}
+
+function PasscodeScreen({ onUnlock }: { onUnlock: () => void }) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+
+  function press(value: string) {
+    setError("");
+    const next = `${code}${value}`.slice(0, 4);
+    setCode(next);
+    if (next.length === 4) {
+      if (next === "0007") {
+        onUnlock();
+      } else {
+        setError("Incorrect passcode");
+        setCode("");
+      }
+    }
+  }
+
+  return (
+    <div className="absolute inset-0 z-[80] flex flex-col bg-[#050816] px-6 py-8 text-center text-white">
+      <div className="mt-10 flex justify-center">
+        <PasscodeLogo />
+      </div>
+      <div className="mt-16">
+        <p className="text-sm text-white/50">Enter passcode</p>
+        <div className="mt-5 flex justify-center gap-3">
+          {[0, 1, 2, 3].map((item) => <span key={item} className={`h-3 w-3 rounded-full ${code.length > item ? "bg-[#ffd347]" : "bg-white/18"}`} />)}
+        </div>
+        <p className="mt-4 h-5 text-xs text-[#ff8f80]">{error}</p>
+      </div>
+      <div className="mt-auto grid grid-cols-3 gap-3 pb-10">
+        {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((value) => (
+          <button key={value} type="button" onClick={() => press(value)} className="grid h-16 place-items-center rounded-full border border-white/10 bg-white/6 text-xl font-black active:scale-[0.98]">{value}</button>
+        ))}
+        <span />
+        <button type="button" onClick={() => press("0")} className="grid h-16 place-items-center rounded-full border border-white/10 bg-white/6 text-xl font-black active:scale-[0.98]">0</button>
+        <button type="button" aria-label="Delete digit" onClick={() => setCode((current) => current.slice(0, -1))} className="grid h-16 place-items-center rounded-full border border-white/10 bg-white/6 active:scale-[0.98]">
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" aria-hidden="true">
+            <path d="M10 6 4 12l6 6h8.5A2.5 2.5 0 0 0 21 15.5v-7A2.5 2.5 0 0 0 18.5 6H10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="m11 9 6 6M17 9l-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
       </div>
     </div>
   );
@@ -1087,6 +1644,7 @@ function LockedState({ app }: { app: DemoState }) {
 
 export function SavrDemo() {
   const app = useDemoState();
+  const [unlocked, setUnlocked] = useState(false);
   const screen =
     app.tab === "account" ? <AccountScreen app={app} /> :
     app.tab === "benefits" ? <BenefitsScreen app={app} /> :
@@ -1094,21 +1652,26 @@ export function SavrDemo() {
     <AdvisorScreen app={app} />;
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-8">
+    <div className="flex h-screen items-start justify-center overflow-hidden px-4 py-0">
       <PhoneFrame>
         <MobileScreen>
-          <div className="relative flex-1 overflow-hidden text-white">
-            <AppHeader onProfile={() => app.setSettingsOpen(true)} />
-            <div className="h-full overflow-y-auto">{screen}</div>
-            <BottomTabs tab={app.tab} setTab={app.setTab} />
-            {app.settingsOpen && <SettingsScreen app={app} />}
-            {app.cardManagerOpen && <CardManagerScreen app={app} />}
-            {app.signedOut && <LockedState app={app} />}
-            <ModalSheet modal={app.modal} close={() => app.setModal(null)} app={app} />
-            {app.toast && (
-              <button type="button" onClick={() => app.setToast("")} className="absolute inset-x-5 top-20 z-[60] rounded-2xl border border-white/10 bg-[#0b1425] p-3 text-left text-xs shadow-2xl">
-                {app.toast}
-              </button>
+          <div className="relative flex-1 overflow-hidden text-white [touch-action:pan-y]">
+            {!unlocked ? (
+              <PasscodeScreen onUnlock={() => setUnlocked(true)} />
+            ) : (
+              <>
+                <AppHeader onProfile={() => app.setSettingsOpen(true)} />
+                <div className="h-full overflow-y-auto overflow-x-hidden [touch-action:pan-y]">{screen}</div>
+                <BottomTabs tab={app.tab} setTab={app.setTab} />
+                {app.settingsOpen && <SettingsScreen app={app} />}
+                {app.cardManagerOpen && <CardManagerScreen app={app} />}
+                {app.transactionsOpen && <TransactionsScreen app={app} />}
+                {app.allBenefitsOpen && <AllBenefitsScreen app={app} />}
+                {app.allSavingsOpen && <AllSavingsScreen app={app} />}
+                {app.compareCardsOpen && <CompareCardsScreen app={app} />}
+                {app.signedOut && <LockedState app={app} />}
+                <ModalSheet modal={app.modal} close={() => app.setModal(null)} app={app} onLock={() => setUnlocked(false)} />
+              </>
             )}
           </div>
         </MobileScreen>

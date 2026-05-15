@@ -10,7 +10,7 @@ export type SavingsStatus = "saved" | "missed" | "corrected" | "expiring";
 export const userProfile = {
   name: "Francesca Liberatore",
   shortName: "Francesca",
-  location: "Milan, Italy",
+  location: "Italy",
   profile: "Gen Z young professional",
   totalBalance: 11318.9,
   topCategories: ["Fashion", "Groceries", "Food delivery", "Transport"],
@@ -27,40 +27,40 @@ export const connectedAccounts = [
 export const cardDetails = [
   {
     id: "intesa",
-    activeBenefits: ["8% cashback at Nike", "Local merchant cashback", "Visa purchase protection"],
-    recommendedUse: ["Nike", "Physical retail", "Italian merchant offers"],
+    activeBenefits: ["Nike: 8% issuer cashback", "Best current in-store fashion offer", "Counts toward SAVR saved-vs-missed tracking"],
+    recommendedUse: ["Use at Nike stores", "Use for in-store fashion", "Use when SAVR shows an issuer cashback alert"],
   },
   {
     id: "unicredit",
-    activeBenefits: ["Esselunga grocery boost", "Trenitalia travel rewards", "Travel insurance"],
-    recommendedUse: ["Groceries", "Transport", "Travel bookings"],
+    activeBenefits: ["Esselunga: grocery boost", "Trenitalia: travel reward", "Strong match for weekly essentials"],
+    recommendedUse: ["Use at Esselunga", "Use for Trenitalia bookings", "Use when groceries exceed SAVR threshold"],
   },
   {
     id: "hype",
-    activeBenefits: ["10% SHEIN cashback", "Youth merchant offers", "Instant card alerts"],
-    recommendedUse: ["SHEIN", "Fashion", "Beauty"],
+    activeBenefits: ["SHEIN: 10% cashback after activation", "Sephora: beauty offer fallback", "Good match for your fashion spend"],
+    recommendedUse: ["Use for SHEIN after activation", "Use for beauty offers", "Use when SAVR flags missed fashion cashback"],
   },
   {
     id: "revolut",
-    activeBenefits: ["3 free Glovo deliveries", "FX-friendly checkout", "Public code fallback"],
-    recommendedUse: ["Zara online", "Glovo", "Travel websites"],
+    activeBenefits: ["Zara: best with public code SAVE10", "Glovo: free-delivery benefit", "Reliable online checkout fallback"],
+    recommendedUse: ["Use for Zara online", "Use in Glovo app", "Use when SAVR combines card + promo code"],
   },
   {
     id: "paypal",
-    activeBenefits: ["Buyer protection", "Fast wallet checkout"],
-    recommendedUse: ["Marketplaces", "Online checkout"],
+    activeBenefits: ["Buyer protection on online checkout", "Wallet option when no card-linked offer wins", "Useful fallback for marketplaces"],
+    recommendedUse: ["Use for marketplace purchases", "Use when SAVR finds no better card offer", "Use when buyer protection matters"],
   },
 ];
 
 export const recentTransactions = [
-  { id: "r1", merchant: "Zara", category: "Fashion", amount: 75, card: "Revolut Card" },
-  { id: "r2", merchant: "Esselunga", category: "Groceries", amount: 52.4, card: "UniCredit Mastercard" },
-  { id: "r3", merchant: "Glovo", category: "Food delivery", amount: 24.4, card: "Revolut Card" },
-  { id: "r4", merchant: "Nike", category: "Fashion", amount: 150, card: "Intesa Sanpaolo Visa Debit" },
-  { id: "r5", merchant: "Trenitalia", category: "Transport", amount: 46.9, card: "UniCredit Mastercard" },
-  { id: "r6", merchant: "Spotify", category: "Subscriptions", amount: 5.99, card: "HYPE Card" },
-  { id: "r7", merchant: "SHEIN", category: "Fashion", amount: 50, card: "HYPE Card" },
-  { id: "r8", merchant: "Sephora", category: "Beauty", amount: 84, card: "HYPE Card" },
+  { id: "r1", merchant: "Zara", category: "Fashion", originalAmount: 75, amount: 67.5, card: "Revolut Card", savrStatus: "saved", savrAmount: 7.5, redemption: "Applied code SAVE10 at checkout." },
+  { id: "r2", merchant: "Esselunga", category: "Groceries", originalAmount: 52.4, amount: 48.4, card: "UniCredit Mastercard", savrStatus: "saved", savrAmount: 4, redemption: "Paid with UniCredit Mastercard to capture the grocery boost." },
+  { id: "r3", merchant: "Glovo", category: "Food delivery", originalAmount: 24.4, amount: 24.4, card: "Revolut Card", savrStatus: "missed", savrAmount: 2.99, redemption: "Activate the Revolut delivery benefit before checkout." },
+  { id: "r4", merchant: "Nike", category: "Fashion", originalAmount: 150, amount: 138, card: "Intesa Sanpaolo Visa Debit", savrStatus: "saved", savrAmount: 12, redemption: "Paid with Intesa Visa for 8% cashback." },
+  { id: "r5", merchant: "Trenitalia", category: "Transport", originalAmount: 46.9, amount: 40.9, card: "UniCredit Mastercard", savrStatus: "saved", savrAmount: 6, redemption: "Paid with UniCredit Mastercard in the booking flow." },
+  { id: "r6", merchant: "Spotify", category: "Subscriptions", originalAmount: 5.99, amount: 5.99, card: "HYPE Card", savrStatus: "saved", savrAmount: 0, redemption: "No stronger active benefit was available for this payment." },
+  { id: "r7", merchant: "SHEIN", category: "Fashion", originalAmount: 50, amount: 50, card: "HYPE Card", savrStatus: "missed", savrAmount: 5, redemption: "Activate HYPE cashback before paying." },
+  { id: "r8", merchant: "Sephora", category: "Beauty", originalAmount: 84, amount: 84, card: "HYPE Card", savrStatus: "missed", savrAmount: 8, redemption: "Use code BEAUTY8 or show the in-store QR before the offer expires." },
 ];
 
 export const initialOffers = [
@@ -77,8 +77,8 @@ export const initialOffers = [
     category: "Fashion",
     linkKey: "nike" as ExternalLinkKey,
     code: "",
-    why: "Francesca is near Nike Milano and this is her highest value in-store fashion benefit.",
-    restrictions: "Use Intesa Visa at checkout. Cashback posts within 5 business days.",
+    why: "Use Intesa Visa in store to earn the strongest active fashion cashback available on this purchase.",
+    restrictions: "Pay with Intesa Visa at checkout. Cashback is calculated on the final paid amount and posts after the transaction settles.",
   },
   {
     id: "zara-revolut",
@@ -93,8 +93,8 @@ export const initialOffers = [
     category: "Fashion",
     linkKey: "zara" as ExternalLinkKey,
     code: "SAVE10",
-    why: "A public code beats card cashback on this basket; Revolut is still recommended for checkout reliability.",
-    restrictions: "Code applies above EUR 60 and may not stack with sale items.",
+    why: "Use Revolut Card and apply SAVE10 because the public code beats the available card cashback on this basket.",
+    restrictions: "Enter SAVE10 at website checkout. The code applies to eligible baskets above EUR 60 and may not combine with sale pricing.",
   },
   {
     id: "shein-hype",
@@ -104,13 +104,13 @@ export const initialOffers = [
     estimatedSaving: 5,
     bestCard: "HYPE Card",
     channel: "website" as OfferChannel,
-    expiry: "Jun 02",
+    expiry: "June 2",
     status: "activation required" as OfferStatus,
     category: "Fashion",
     linkKey: "shein" as ExternalLinkKey,
     code: "",
-    why: "HYPE cashback matches Francesca's recurring fashion spend and previous missed SHEIN saving.",
-    restrictions: "Activate before checkout. Cashback is capped at EUR 10.",
+    why: "Activate HYPE before checkout to capture cashback on a fashion purchase that would otherwise be easy to miss.",
+    restrictions: "Activate the offer first, then pay with HYPE. Cashback is capped at EUR 10 and is based on the final paid amount.",
   },
   {
     id: "glovo-revolut",
@@ -125,8 +125,8 @@ export const initialOffers = [
     category: "Food delivery",
     linkKey: "glovo" as ExternalLinkKey,
     code: "REVDELIVERY",
-    why: "Francesca orders delivery twice a week and missed this benefit last month.",
-    restrictions: "Requires Revolut Premium benefit activation before payment.",
+    why: "Activate the Revolut delivery benefit before ordering so the free delivery saving is applied in the app.",
+    restrictions: "Use the Glovo app after activation and pay with Revolut. The benefit must be active before checkout.",
   },
   {
     id: "esselunga-unicredit",
@@ -136,13 +136,13 @@ export const initialOffers = [
     estimatedSaving: 4,
     bestCard: "UniCredit Mastercard",
     channel: "in-store" as OfferChannel,
-    expiry: "Jun 10",
+    expiry: "June 10",
     status: "active" as OfferStatus,
     category: "Groceries",
     linkKey: "esselunga" as ExternalLinkKey,
     code: "",
-    why: "Groceries are a top category and this clears Francesca's EUR 5 threshold when basket is above EUR 60.",
-    restrictions: "Use UniCredit Mastercard in participating stores.",
+    why: "Use UniCredit for larger grocery shops because this card-linked offer is the best active match for Esselunga.",
+    restrictions: "Pay with UniCredit Mastercard in participating stores. The saving depends on the final basket total.",
   },
   {
     id: "sephora-hype",
@@ -153,12 +153,12 @@ export const initialOffers = [
     bestCard: "HYPE Card",
     channel: "website" as OfferChannel,
     expiry: "Tomorrow",
-    status: "expiring soon" as OfferStatus,
+    status: "activation required" as OfferStatus,
     category: "Beauty",
     linkKey: "sephora" as ExternalLinkKey,
     code: "BEAUTY8",
-    why: "Beauty is a favorite category and this partner code expires tomorrow.",
-    restrictions: "Code works online and in-store QR redemptions.",
+    why: "Use this beauty offer before it expires; it is the strongest available Sephora saving in your current benefits.",
+    restrictions: "Use BEAUTY8 online or show the in-store QR where accepted before paying.",
   },
   {
     id: "trenitalia-unicredit",
@@ -168,13 +168,13 @@ export const initialOffers = [
     estimatedSaving: 6,
     bestCard: "UniCredit Mastercard",
     channel: "app" as OfferChannel,
-    expiry: "Jun 15",
+    expiry: "June 15",
     status: "active" as OfferStatus,
     category: "Transport",
     linkKey: "trenitalia" as ExternalLinkKey,
     code: "",
-    why: "UniCredit travel rewards match Francesca's Milan to Rome train pattern.",
-    restrictions: "Use UniCredit Mastercard in Trenitalia app or website.",
+    why: "Use UniCredit for train bookings because it is the best active travel reward on your connected cards.",
+    restrictions: "Pay with UniCredit Mastercard in the Trenitalia app or on the website before the offer expires.",
   },
 ];
 
@@ -189,13 +189,12 @@ export const initialSavingsEvents = [
 ];
 
 export const defaultFavorites = {
-  stores: ["Zara", "Nike", "Esselunga", "Glovo", "SHEIN", "Sephora"],
+  stores: ["Zara", "Esselunga", "Glovo", "SHEIN", "Sephora"],
   categories: ["Fashion", "Groceries", "Food delivery", "Transport", "Beauty", "Travel"],
 };
 
 export const partnerLinks = [
   ["Visa", "visa"],
-  ["Tink", "tink"],
   ["Intesa Sanpaolo", "intesa"],
   ["UniCredit", "unicredit"],
   ["HYPE", "hype"],
