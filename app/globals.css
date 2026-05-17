@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   --font-sans:
     "Manrope", "Avenir Next", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
@@ -48,4 +48,57 @@ button {
 ::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
+}
+
+.light-app {
+  background: #f7f9fc;
+  color: #07111f;
+}
+
+.light-app [class*="bg-[#050816]"],
+.light-app [class*="bg-[#040812]"],
+.light-app [class*="bg-[#08111f]"],
+.light-app [class*="bg-[#09111f]"] {
+  background: #f7f9fc !important;
+}
+
+.light-app [class*="bg-white/"],
+.light-app [class*="bg-black/"] {
+  background: #ffffff !important;
+}
+
+.light-app [class*="border-white/"] {
+  border-color: #dbe3ef !important;
+}
+
+.light-app [class*="text-white"] {
+  color: #334155 !important;
+}
+
+.light-app [data-brand-logo],
+.light-app [data-brand-logo] * {
+  color: #ffffff !important;
+}
+
+.light-app [data-dark-surface] {
+  background: #ffffff !important;
+  color: #07111f !important;
+  border-color: #dbe3ef !important;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
+}
+
+.light-app [data-tab-active="true"] {
+  background: #e8f0ff !important;
+  color: #07111f !important;
+}
+
+.light-app input,
+.light-app select {
+  background: #ffffff !important;
+  color: #07111f !important;
+  border-color: #dbe3ef !important;
+}
+
+.light-app ::placeholder {
+  color: #94a3b8 !important;
 }

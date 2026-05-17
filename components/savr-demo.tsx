@@ -61,7 +61,7 @@ const baselineMissedThisMonth = 120;
 
 const tabs: Array<{ id: AppTab; label: string }> = [
   { id: "account", label: "Account" },
-  { id: "benefits", label: "Benefits" },
+  { id: "benefits", label: "Rewards" },
   { id: "difference", label: "SAVR Difference" },
   { id: "advisor", label: "Personal Advisor" },
 ];
@@ -185,7 +185,7 @@ function ActionButton({
     primary: "bg-gradient-to-r from-[#2d79ff] to-[#ffd347] text-[#07111f]",
     secondary: "border border-white/12 bg-white/8 text-white",
     quiet: "bg-transparent text-white/68 hover:bg-white/7",
-    danger: "border border-red-300/20 bg-red-400/12 text-red-100",
+    danger: "border border-[#dc2626] bg-[#dc2626] text-white shadow-[0_10px_24px_rgba(220,38,38,0.24)]",
   };
 
   return (
@@ -207,7 +207,7 @@ function Pill({ children, tone = "default" }: { children: React.ReactNode; tone?
 
 function AppHeader({ onProfile }: { onProfile: () => void }) {
   return (
-    <div className="sticky top-0 z-20 flex items-center justify-between bg-[linear-gradient(180deg,rgba(5,8,22,0.96),rgba(5,8,22,0.76),transparent)] px-4 pb-3 pt-3 backdrop-blur-md">
+    <div className="sticky top-0 z-20 flex items-center justify-between bg-[linear-gradient(180deg,rgba(247,249,252,0.96),rgba(247,249,252,0.86),transparent)] px-4 pb-3 pt-3 backdrop-blur-md">
       <SavrLogo />
       <button type="button" onClick={onProfile} aria-label="Open profile settings" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/8 text-sm font-bold">
         FL
@@ -218,10 +218,10 @@ function AppHeader({ onProfile }: { onProfile: () => void }) {
 
 function BottomTabs({ tab, setTab }: { tab: AppTab; setTab: (tab: AppTab) => void }) {
   return (
-    <div className="absolute inset-x-3 bottom-3 z-30 rounded-[28px] border border-white/10 bg-[#09111f]/96 p-2 backdrop-blur-xl">
+    <div data-dark-surface className="absolute inset-x-3 bottom-3 z-30 rounded-[28px] border border-white/10 bg-[#09111f]/96 p-2 backdrop-blur-xl">
       <div className="grid grid-cols-4 gap-1">
         {tabs.map((item) => (
-          <button key={item.id} type="button" onClick={() => setTab(item.id)} className={`rounded-2xl px-1 py-2 text-center transition ${tab === item.id ? "bg-white/12 text-white" : "text-white/42"}`}>
+          <button key={item.id} type="button" data-tab-active={tab === item.id ? "true" : "false"} onClick={() => setTab(item.id)} className={`rounded-2xl px-1 py-2 text-center transition ${tab === item.id ? "bg-white/12 text-white" : "text-white/42"}`}>
             <TabIcon id={item.id} />
             <div className="mt-1 text-[10px] font-semibold leading-tight">{item.label}</div>
           </button>
@@ -252,7 +252,7 @@ function ModalSheet({
 
   return (
     <div className="absolute inset-0 z-50 flex items-end bg-black/58 backdrop-blur-sm" onClick={close}>
-      <div className="max-h-[82%] w-full overflow-y-auto rounded-t-[30px] border border-white/10 bg-[#08111f] p-4 shadow-2xl" onClick={(eventClick) => eventClick.stopPropagation()}>
+      <div data-dark-surface className="max-h-[82%] w-full overflow-y-auto rounded-t-[30px] border border-white/10 bg-[#08111f] p-4 shadow-2xl" onClick={(eventClick) => eventClick.stopPropagation()}>
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/16" />
 
         {modal.type === "bankReconnect" && (
@@ -275,8 +275,8 @@ function ModalSheet({
               <p>Card type: {card.type}</p>
               <p>Card ending: •••• {card.last4 || "0000"}</p>
             </div>
-            <h4 className="mt-4 text-sm font-bold">Current SAVR matches</h4>
-            <div className="mt-2 grid gap-2">{(detail?.activeBenefits || ["Eligible for SAVR merchant matching", "Used in best-card recommendations"]).map((item) => <Panel key={item}>{item}</Panel>)}</div>
+            <h4 className="mt-4 text-sm font-bold">Current SAVR reward matches</h4>
+            <div className="mt-2 grid gap-2">{(detail?.activeBenefits || ["Eligible for SAVR merchant matching", "Used in best-card recommendations"]).map((item) => <Panel key={item}>{item.replace(/benefits/g, "rewards").replace(/benefit/g, "reward")}</Panel>)}</div>
             <h4 className="mt-4 text-sm font-bold">When SAVR would recommend it</h4>
             <div className="mt-2 flex flex-wrap gap-2">{(detail?.recommendedUse || ["New purchases", "Merchant offers"]).map((item) => <Pill key={item} tone="blue">{item}</Pill>)}</div>
           </SheetSection>
@@ -329,7 +329,7 @@ function ModalSheet({
             {modal.action === "activate" && (
               <div className="mt-4 rounded-2xl border border-[#2d79ff]/30 bg-[#2d79ff]/12 p-4">
                 <p className="text-sm font-bold">Issuer activation</p>
-                <p className="mt-2 text-xs leading-5 text-white/62">SAVR will mark this benefit as ready before you pay with {offer.bestCard}.</p>
+                <p className="mt-2 text-xs leading-5 text-white/62">SAVR will mark this reward as ready before you pay with {offer.bestCard}.</p>
               </div>
             )}
             <div className="mt-4 grid min-w-0 grid-cols-2 gap-2">
@@ -414,7 +414,7 @@ function ModalSheet({
             <div className="grid gap-2">
               <TransactionDetailRow label="Why SAVR recommends it" value="Your recent spend is shifting toward fashion, delivery, and travel, where a stronger rewards card can outperform your current basic Visa debit setup." />
               <TransactionDetailRow label="Estimated uplift" value="EUR 14-22/month" nowrap tone="saved" />
-              <TransactionDetailRow label="Best fit" value="Fashion cashback, delivery benefits, and travel rewards" />
+              <TransactionDetailRow label="Best fit" value="Fashion cashback, delivery rewards, and travel rewards" />
             </div>
             <ActionButton className="mt-4 w-full" onClick={() => undefined}>Open card website</ActionButton>
           </SheetSection>
@@ -434,7 +434,7 @@ function ModalSheet({
               <p className="mt-3 text-sm leading-6 text-white/66">{transaction.redemption}</p>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <ActionButton onClick={() => { app.setTransactionsOpen(false); app.setTab("benefits"); close(); }}>View matching offers</ActionButton>
+              <ActionButton onClick={() => { app.setTransactionsOpen(false); app.setTab("benefits"); close(); }}>View matching rewards</ActionButton>
               <ActionButton tone="secondary" onClick={() => { app.setTab("advisor"); close(); }}>Ask advisor</ActionButton>
             </div>
           </SheetSection>
@@ -504,14 +504,14 @@ function transactionInsight(merchant: string) {
   const insights: Record<string, string> = {
     Zara: "SAVR found a better checkout path: Revolut Card plus public code SAVE10 would capture about EUR 7.50 on a similar basket.",
     Esselunga: "This fits your grocery pattern. UniCredit Mastercard is the right card when the basket clears the groceries boost threshold.",
-    Glovo: "Your delivery spend is frequent. SAVR checks Revolut delivery benefits and reminds you before in-app checkout.",
-    Nike: "This transaction matched an issuer benefit. Intesa Visa is the best card for Nike in-store cashback.",
+    Glovo: "Your delivery spend is frequent. SAVR checks Revolut delivery rewards and reminds you before in-app checkout.",
+    Nike: "This transaction matched an issuer reward. Intesa Visa is the best card for Nike in-store cashback.",
     Trenitalia: "Transport spend maps to UniCredit travel rewards. SAVR watches expiry dates and app checkout moments.",
-    Spotify: "No stronger active benefit was found for this subscription, so SAVR keeps it classified but does not surface a reminder.",
+    Spotify: "No stronger active reward was found for this subscription, so SAVR keeps it classified but does not surface a reminder.",
     SHEIN: "SAVR flagged a missed HYPE cashback opportunity and will prioritize this merchant in future fashion reminders.",
     Sephora: "Beauty offers are expiring soon. SAVR recommends checking HYPE and partner codes before paying.",
   };
-  return insights[merchant] || "SAVR checks the merchant, category, card used, active issuer benefits, public codes, and missed-saving history for the next best action.";
+  return insights[merchant] || "SAVR checks the merchant, category, card used, active issuer rewards, public codes, and missed-saving history for the next best action.";
 }
 
 function TransactionOutcome({ tx, compact = false }: { tx: (typeof recentTransactions)[number]; compact?: boolean }) {
@@ -540,7 +540,7 @@ function offerValueDetail(offer: ReturnType<typeof useDemoState>["offers"][numbe
   const lower = offer.title.toLowerCase();
   const percentMatch = offer.title.match(/\d+%/);
   if (percentMatch && lower.includes("cashback")) return `${percentMatch[0]} cashback based on your final basket`;
-  if (percentMatch) return `${percentMatch[0]} discount based on your final basket`;
+  if (percentMatch) return `${percentMatch[0]} reward based on your final basket`;
   if (lower.includes("cashback")) return "Cashback amount depends on your final spend";
   if (lower.includes("free deliver")) return `Usually worth ${eur(offer.estimatedSaving)}`;
   return eur(offer.estimatedSaving);
@@ -561,7 +561,7 @@ function transactionSavedTotal() {
 }
 
 function formatOfferType(type: string) {
-  return type.charAt(0).toUpperCase() + type.slice(1);
+  return (type.charAt(0).toUpperCase() + type.slice(1)).replace(/benefit/g, "reward");
 }
 
 function offerPriority(offer: ReturnType<typeof useDemoState>["offers"][number], app: DemoState) {
@@ -652,7 +652,7 @@ function useDemoState() {
     const offer = initialOffers.find((item) => item.id === id);
     if (!offer) return;
     setOfferState((current) => ({ ...current, [id]: { ...current[id], activated: true, status: "active" } }));
-    setToast(`${offer.merchant} benefit activated`);
+    setToast(`${offer.merchant} reward activated`);
   }
 
   function snoozeOffer(id: string, duration: string) {
@@ -815,9 +815,7 @@ function CardListRow({ card, onClick }: { card: ConnectedCard; onClick: () => vo
   return (
     <button type="button" onClick={onClick} className="w-full max-w-full overflow-hidden rounded-[22px] border border-white/10 bg-white/6 p-3 text-left transition hover:bg-white/9">
       <div className="flex items-center gap-3">
-        <div className={`grid h-10 w-12 shrink-0 place-items-center rounded-2xl text-[11px] font-black ${card.default ? "bg-[#1b67ff] text-white" : "bg-[#111318] text-white"}`}>
-          {card.network || "VISA"}
-        </div>
+        <IssuerLogo issuer={card.issuer} cardName={card.name} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-black leading-tight">{cardDisplayName(card)}</p>
           <p className="mt-1 truncate text-[11px] text-white/48">•••• {card.last4 || "0000"} · {card.issuer}</p>
@@ -841,6 +839,34 @@ function cardDisplayName(card: ConnectedCard) {
     paypal: "PayPal",
   };
   return names[card.id] || card.name;
+}
+
+function IssuerLogo({ issuer, cardName }: { issuer?: string; cardName?: string }) {
+  const source = `${issuer || ""} ${cardName || ""}`.toLowerCase();
+  let label = "Visa";
+  let classes = "bg-[#1b67ff] text-white";
+  if (source.includes("intesa")) {
+    label = "Intesa";
+    classes = "bg-[#007a5e] text-white";
+  } else if (source.includes("unicredit")) {
+    label = "UniCredit";
+    classes = "bg-[#d71920] text-white";
+  } else if (source.includes("hype")) {
+    label = "HYPE";
+    classes = "bg-[#6f3cff] text-white";
+  } else if (source.includes("revolut")) {
+    label = "Revolut";
+    classes = "bg-black text-white";
+  } else if (source.includes("paypal")) {
+    label = "PayPal";
+    classes = "bg-[#0070ba] text-white";
+  }
+
+  return (
+    <div data-brand-logo className={`grid h-10 w-12 shrink-0 place-items-center rounded-2xl px-1 text-center text-[8px] font-black leading-none ${classes}`}>
+      {label}
+    </div>
+  );
 }
 
 function CardManagerScreen({ app }: { app: DemoState }) {
@@ -1068,7 +1094,7 @@ function CompareCardsScreen({ app }: { app: DemoState }) {
 function AllBenefitsScreen({ app }: { app: DemoState }) {
   const [filter, setFilter] = useState("All");
   const offers = [...app.offers].sort((left, right) => offerPriority(right, app) - offerPriority(left, app));
-  const filterOptions = ["All", "Website", "In-store", "App", "Issuer benefit", "Card-linked offer", "Public promo code", "Partner offer", "Favourites"];
+  const filterOptions = ["All", "Website", "In-store", "App", "Issuer reward", "Card-linked offer", "Public promo code", "Partner offer", "Favourites"];
   const filteredOffers = offers.filter((offer) => {
     if (filter === "All") return true;
     if (filter === "Favourites") return offer.favorite;
@@ -1082,7 +1108,7 @@ function AllBenefitsScreen({ app }: { app: DemoState }) {
     <div className="absolute inset-0 z-40 bg-[#050816] text-white">
       <div className="flex items-center justify-between px-4 py-4">
         <button type="button" onClick={() => app.setAllBenefitsOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Back</button>
-        <h2 className="text-lg font-black">All discounts</h2>
+        <h2 className="text-lg font-black">All rewards</h2>
         <span className="w-[58px]" aria-hidden="true" />
       </div>
       <div className="h-[calc(100%-72px)] overflow-y-auto overflow-x-hidden px-4 pb-44">
@@ -1090,7 +1116,7 @@ function AllBenefitsScreen({ app }: { app: DemoState }) {
           <Metric label="Available now" value={String(activeCount)} />
           <Metric label="Tracked value" value={eur(estimatedTotal)} tone="gold" />
         </div>
-        <SectionTitle title="Filter discounts" />
+        <SectionTitle title="Filter rewards" />
         <div className="flex gap-2 overflow-x-auto pb-2">
           {filterOptions.map((option) => (
             <button key={option} type="button" onClick={() => setFilter(option)} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-bold ${filter === option ? "border-[#ffd347]/50 bg-[#ffd347]/18 text-[#ffd347]" : "border-white/10 bg-white/7 text-white/62"}`}>
@@ -1118,7 +1144,7 @@ function BenefitsScreen({ app }: { app: DemoState }) {
   };
   return (
     <ScreenPad>
-      <h1 className="text-2xl font-black tracking-normal">Benefits</h1>
+      <h1 className="text-2xl font-black tracking-normal">Rewards</h1>
 
       <BenefitOfferSection
         title="Recommended for you"
@@ -1168,7 +1194,7 @@ function OfferCard({ offer, app }: { offer: ReturnType<typeof useDemoState>["off
   return (
     <div className="max-w-full overflow-hidden rounded-3xl border border-white/10 bg-white/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
       <button type="button" onClick={() => app.setModal({ type: "offer", id: offer.id, action: "details" })} className="flex w-full min-w-0 items-start gap-3 text-left">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[#2d79ff] to-[#ffd347] text-sm font-black text-[#06101e]">{offer.merchant.slice(0, 2).toUpperCase()}</div>
+        <IssuerLogo issuer={offer.bestCard} cardName={offer.bestCard} />
         <div className="min-w-0 flex-1">
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
             <div className="min-w-0">
@@ -1252,7 +1278,7 @@ function DifferenceScreen({ app }: { app: DemoState }) {
 }
 
 function Metric({ label, value, tone = "blue" }: { label: string; value: string; tone?: "blue" | "gold" }) {
-  return <div className="rounded-3xl border border-white/10 bg-white/6 p-4"><p className="text-xs text-white/46">{label}</p><p className={`mt-2 text-xl font-black tracking-normal ${tone === "gold" ? "text-[#ffd347]" : "text-white"}`}>{value}</p></div>;
+  return <div className="rounded-3xl border border-white/10 bg-white/6 p-4"><p className="text-xs text-white/46">{label}</p><p className={`mt-2 text-xl font-black tracking-normal ${tone === "gold" ? "text-[#ef4444]" : "text-[#16a34a]"}`}>{value}</p></div>;
 }
 
 function CategoryBreakdown() {
@@ -1279,12 +1305,12 @@ function CategoryBreakdown() {
           <div key={category}>
             <div className="flex items-center justify-between gap-3">
               <p className="text-lg font-black tracking-normal">{category}</p>
-              <p className="shrink-0 text-sm font-black text-white/58"><span className="text-[#2d79ff]">{eur(saved)}</span> <span className="text-[#ffd347]">+{eur(missed)}</span></p>
+              <p className="shrink-0 text-sm font-black text-white/58"><span className="text-[#16a34a]">{eur(saved)}</span> <span className="text-[#ef4444]">+{eur(missed)}</span></p>
             </div>
             <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/8">
               <div className="flex h-full">
-                <div className="h-full bg-[#2d79ff]" style={{ width: `${savedWidth}%` }} />
-                <div className="h-full bg-[#ffd347]" style={{ width: `${missedWidth}%` }} />
+                <div className="h-full bg-[#16a34a]" style={{ width: `${savedWidth}%` }} />
+                <div className="h-full bg-[#ef4444]" style={{ width: `${missedWidth}%` }} />
               </div>
             </div>
           </div>
@@ -1353,7 +1379,7 @@ function AdvisorScreen({ app }: { app: DemoState }) {
         />
         <InsightCard
           title="Last month was strong"
-          body="You captured most available savings on groceries, transport, and Zara checkout. Your biggest opportunity is still activating benefits before paying."
+          body="You captured most available savings on groceries, transport, and Zara checkout. Your biggest opportunity is still activating rewards before paying."
           action="Review savings"
           onClick={() => app.setTab("difference")}
         />
@@ -1584,11 +1610,11 @@ function SectionTitle({ title, action, onClick }: { title: string; action?: stri
 
 function LockedState({ app }: { app: DemoState }) {
   return (
-    <div className="absolute inset-0 z-50 grid place-items-center bg-[#050816] px-6 text-center">
+    <div className="absolute inset-0 z-50 grid place-items-center bg-[#f7f9fc] px-6 text-center text-[#07111f]">
       <div>
         <SavrLogo />
         <h1 className="mt-8 text-2xl font-black">Signed out</h1>
-        <p className="mt-3 text-sm leading-6 text-white/58">You are signed out of SAVR on this phone.</p>
+        <p className="mt-3 text-sm leading-6 text-slate-500">You are signed out of SAVR on this phone.</p>
         <ActionButton className="mt-6 w-full" onClick={() => { app.setSignedOut(false); app.setToast("Welcome back"); }}>Return to SAVR</ActionButton>
       </div>
     </div>
@@ -1614,24 +1640,24 @@ function PasscodeScreen({ onUnlock }: { onUnlock: () => void }) {
   }
 
   return (
-    <div className="absolute inset-0 z-[80] flex flex-col bg-[#050816] px-6 py-8 text-center text-white">
+    <div className="absolute inset-0 z-[80] flex flex-col bg-[#f7f9fc] px-6 py-8 text-center text-[#07111f]">
       <div className="mt-10 flex justify-center">
         <PasscodeLogo />
       </div>
       <div className="mt-16">
-        <p className="text-sm text-white/50">Enter passcode</p>
+        <p className="text-sm text-slate-500">Enter passcode</p>
         <div className="mt-5 flex justify-center gap-3">
-          {[0, 1, 2, 3].map((item) => <span key={item} className={`h-3 w-3 rounded-full ${code.length > item ? "bg-[#ffd347]" : "bg-white/18"}`} />)}
+          {[0, 1, 2, 3].map((item) => <span key={item} className={`h-3 w-3 rounded-full ${code.length > item ? "bg-[#ffd347]" : "bg-slate-300"}`} />)}
         </div>
         <p className="mt-4 h-5 text-xs text-[#ff8f80]">{error}</p>
       </div>
       <div className="mt-auto grid grid-cols-3 gap-3 pb-10">
         {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((value) => (
-          <button key={value} type="button" onClick={() => press(value)} className="grid h-16 place-items-center rounded-full border border-white/10 bg-white/6 text-xl font-black active:scale-[0.98]">{value}</button>
+          <button key={value} type="button" onClick={() => press(value)} className="grid h-16 place-items-center rounded-full border border-slate-200 bg-white text-xl font-black shadow-sm active:scale-[0.98]">{value}</button>
         ))}
         <span />
-        <button type="button" onClick={() => press("0")} className="grid h-16 place-items-center rounded-full border border-white/10 bg-white/6 text-xl font-black active:scale-[0.98]">0</button>
-        <button type="button" aria-label="Delete digit" onClick={() => setCode((current) => current.slice(0, -1))} className="grid h-16 place-items-center rounded-full border border-white/10 bg-white/6 active:scale-[0.98]">
+        <button type="button" onClick={() => press("0")} className="grid h-16 place-items-center rounded-full border border-slate-200 bg-white text-xl font-black shadow-sm active:scale-[0.98]">0</button>
+        <button type="button" aria-label="Delete digit" onClick={() => setCode((current) => current.slice(0, -1))} className="grid h-16 place-items-center rounded-full border border-slate-200 bg-white shadow-sm active:scale-[0.98]">
           <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" aria-hidden="true">
             <path d="M10 6 4 12l6 6h8.5A2.5 2.5 0 0 0 21 15.5v-7A2.5 2.5 0 0 0 18.5 6H10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
             <path d="m11 9 6 6M17 9l-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -1655,7 +1681,7 @@ export function SavrDemo() {
     <div className="flex h-screen items-start justify-center overflow-hidden px-4 py-0">
       <PhoneFrame>
         <MobileScreen>
-          <div className="relative flex-1 overflow-hidden text-white [touch-action:pan-y]">
+          <div className={`relative flex-1 overflow-hidden [touch-action:pan-y] ${unlocked ? "light-app text-[#07111f]" : "text-white"}`}>
             {!unlocked ? (
               <PasscodeScreen onUnlock={() => setUnlocked(true)} />
             ) : (

@@ -2,7 +2,7 @@ import { ExternalLinkKey } from "@/data/links";
 
 export type AppTab = "account" | "benefits" | "difference" | "advisor";
 export type SavrMode = "active" | "passive";
-export type OfferType = "issuer benefit" | "card-linked offer" | "public promo code" | "partner offer";
+export type OfferType = "issuer reward" | "card-linked offer" | "public promo code" | "partner offer";
 export type OfferStatus = "active" | "activation required" | "expiring soon" | "snoozed" | "favorite";
 export type OfferChannel = "website" | "in-store" | "app";
 export type SavingsStatus = "saved" | "missed" | "corrected" | "expiring";
@@ -42,7 +42,7 @@ export const cardDetails = [
   },
   {
     id: "revolut",
-    activeBenefits: ["Zara: best with public code SAVE10", "Glovo: free-delivery benefit", "Reliable online checkout fallback"],
+    activeBenefits: ["Zara: best with public code SAVE10", "Glovo: free-delivery reward", "Reliable online checkout fallback"],
     recommendedUse: ["Use for Zara online", "Use in Glovo app", "Use when SAVR combines card + promo code"],
   },
   {
@@ -55,10 +55,10 @@ export const cardDetails = [
 export const recentTransactions = [
   { id: "r1", merchant: "Zara", category: "Fashion", originalAmount: 75, amount: 67.5, card: "Revolut Card", savrStatus: "saved", savrAmount: 7.5, redemption: "Applied code SAVE10 at checkout." },
   { id: "r2", merchant: "Esselunga", category: "Groceries", originalAmount: 52.4, amount: 48.4, card: "UniCredit Mastercard", savrStatus: "saved", savrAmount: 4, redemption: "Paid with UniCredit Mastercard to capture the grocery boost." },
-  { id: "r3", merchant: "Glovo", category: "Food delivery", originalAmount: 24.4, amount: 24.4, card: "Revolut Card", savrStatus: "missed", savrAmount: 2.99, redemption: "Activate the Revolut delivery benefit before checkout." },
+  { id: "r3", merchant: "Glovo", category: "Food delivery", originalAmount: 24.4, amount: 24.4, card: "Revolut Card", savrStatus: "missed", savrAmount: 2.99, redemption: "Activate the Revolut delivery reward before checkout." },
   { id: "r4", merchant: "Nike", category: "Fashion", originalAmount: 150, amount: 138, card: "Intesa Sanpaolo Visa Debit", savrStatus: "saved", savrAmount: 12, redemption: "Paid with Intesa Visa for 8% cashback." },
   { id: "r5", merchant: "Trenitalia", category: "Transport", originalAmount: 46.9, amount: 40.9, card: "UniCredit Mastercard", savrStatus: "saved", savrAmount: 6, redemption: "Paid with UniCredit Mastercard in the booking flow." },
-  { id: "r6", merchant: "Spotify", category: "Subscriptions", originalAmount: 5.99, amount: 5.99, card: "HYPE Card", savrStatus: "saved", savrAmount: 0, redemption: "No stronger active benefit was available for this payment." },
+  { id: "r6", merchant: "Spotify", category: "Subscriptions", originalAmount: 5.99, amount: 5.99, card: "HYPE Card", savrStatus: "saved", savrAmount: 0, redemption: "No stronger active reward was available for this payment." },
   { id: "r7", merchant: "SHEIN", category: "Fashion", originalAmount: 50, amount: 50, card: "HYPE Card", savrStatus: "missed", savrAmount: 5, redemption: "Activate HYPE cashback before paying." },
   { id: "r8", merchant: "Sephora", category: "Beauty", originalAmount: 84, amount: 84, card: "HYPE Card", savrStatus: "missed", savrAmount: 8, redemption: "Use code BEAUTY8 or show the in-store QR before the offer expires." },
 ];
@@ -68,7 +68,7 @@ export const initialOffers = [
     id: "nike-intesa",
     merchant: "Nike",
     title: "8% cashback with Intesa Visa",
-    type: "issuer benefit" as OfferType,
+    type: "issuer reward" as OfferType,
     estimatedSaving: 12,
     bestCard: "Intesa Sanpaolo Visa Debit",
     channel: "in-store" as OfferChannel,
@@ -116,7 +116,7 @@ export const initialOffers = [
     id: "glovo-revolut",
     merchant: "Glovo",
     title: "3 free deliveries with Revolut Premium",
-    type: "issuer benefit" as OfferType,
+    type: "issuer reward" as OfferType,
     estimatedSaving: 2.99,
     bestCard: "Revolut Card",
     channel: "app" as OfferChannel,
@@ -125,8 +125,8 @@ export const initialOffers = [
     category: "Food delivery",
     linkKey: "glovo" as ExternalLinkKey,
     code: "REVDELIVERY",
-    why: "Activate the Revolut delivery benefit before ordering so the free delivery saving is applied in the app.",
-    restrictions: "Use the Glovo app after activation and pay with Revolut. The benefit must be active before checkout.",
+    why: "Activate the Revolut delivery reward before ordering so the free delivery saving is applied in the app.",
+    restrictions: "Use the Glovo app after activation and pay with Revolut. The reward must be active before checkout.",
   },
   {
     id: "esselunga-unicredit",
@@ -157,14 +157,14 @@ export const initialOffers = [
     category: "Beauty",
     linkKey: "sephora" as ExternalLinkKey,
     code: "BEAUTY8",
-    why: "Use this beauty offer before it expires; it is the strongest available Sephora saving in your current benefits.",
+    why: "Use this beauty offer before it expires; it is the strongest available Sephora saving in your current rewards.",
     restrictions: "Use BEAUTY8 online or show the in-store QR where accepted before paying.",
   },
   {
     id: "trenitalia-unicredit",
     merchant: "Trenitalia",
     title: "Travel reward with UniCredit",
-    type: "issuer benefit" as OfferType,
+    type: "issuer reward" as OfferType,
     estimatedSaving: 6,
     bestCard: "UniCredit Mastercard",
     channel: "app" as OfferChannel,
@@ -179,13 +179,13 @@ export const initialOffers = [
 ];
 
 export const initialSavingsEvents = [
-  { id: "e1", merchant: "Nike", category: "Fashion", source: "issuer benefits", description: "Saved EUR 12 using Intesa Visa", amount: 12, status: "saved" as SavingsStatus },
+  { id: "e1", merchant: "Nike", category: "Fashion", source: "issuer rewards", description: "Saved EUR 12 using Intesa Visa", amount: 12, status: "saved" as SavingsStatus },
   { id: "e2", merchant: "Zara", category: "Fashion", source: "public promo codes", description: "Saved EUR 7.50 using SAVE10", amount: 7.5, status: "saved" as SavingsStatus },
-  { id: "e3", merchant: "Glovo", category: "Food delivery", source: "issuer benefits", description: "Missed EUR 2.99 free delivery", amount: 2.99, status: "missed" as SavingsStatus },
+  { id: "e3", merchant: "Glovo", category: "Food delivery", source: "issuer rewards", description: "Missed EUR 2.99 free delivery", amount: 2.99, status: "missed" as SavingsStatus },
   { id: "e4", merchant: "SHEIN", category: "Fashion", source: "card recommendations", description: "Missed EUR 5 HYPE cashback", amount: 5, status: "missed" as SavingsStatus },
   { id: "e5", merchant: "Esselunga", category: "Groceries", source: "merchant offers", description: "Saved EUR 4 with UniCredit groceries offer", amount: 4, status: "saved" as SavingsStatus },
   { id: "e6", merchant: "Sephora", category: "Beauty", source: "merchant offers", description: "Expiring offer not used yet", amount: 8, status: "expiring" as SavingsStatus },
-  { id: "e7", merchant: "Spotify", category: "Subscriptions", source: "card recommendations", description: "No better benefit found", amount: 0, status: "saved" as SavingsStatus },
+  { id: "e7", merchant: "Spotify", category: "Subscriptions", source: "card recommendations", description: "No better reward found", amount: 0, status: "saved" as SavingsStatus },
 ];
 
 export const defaultFavorites = {
@@ -217,7 +217,7 @@ export const advisorPrompts = [
   "Best card for Zara",
   "Best card for groceries",
   "Where did I miss savings?",
-  "Benefits expiring soon",
+  "Rewards expiring soon",
   "New card suggestions",
   "Ask SAVR through ChatGPT",
 ];
