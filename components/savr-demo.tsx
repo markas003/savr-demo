@@ -251,7 +251,7 @@ function ModalSheet({
   const transaction = modal.type === "transaction" ? recentTransactions.find((item) => item.id === modal.id) : null;
 
   return (
-    <div className="absolute inset-0 z-50 flex items-end bg-black/58 backdrop-blur-sm" onClick={close}>
+    <div data-modal-backdrop className="absolute inset-0 z-50 flex items-end bg-black/58 backdrop-blur-sm" onClick={close}>
       <div data-dark-surface className="max-h-[82%] w-full overflow-y-auto rounded-t-[30px] border border-white/10 bg-[#08111f] p-4 shadow-2xl" onClick={(eventClick) => eventClick.stopPropagation()}>
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/16" />
 
@@ -934,7 +934,7 @@ function CardManagerScreen({ app }: { app: DemoState }) {
   return (
     <div className="absolute inset-0 z-40 w-full max-w-full overflow-hidden bg-[#050816] [touch-action:pan-y]">
       <div className="flex items-center justify-between px-4 py-4">
-        <button type="button" onClick={() => app.setCardManagerOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Back</button>
+        <button type="button" onClick={() => app.setCardManagerOpen(false)} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-[#07111f] shadow-sm">Back</button>
         <h2 className="text-lg font-black">Manage cards</h2>
         <button type="button" onClick={() => setAdding((current) => !current)} className="rounded-full bg-[#ffd347] px-3 py-1.5 text-sm font-black text-black">{adding ? "Close" : "Add"}</button>
       </div>
@@ -1012,7 +1012,7 @@ function TransactionsScreen({ app }: { app: DemoState }) {
   return (
     <div className="absolute inset-0 z-40 bg-[#050816]">
       <div className="flex items-center justify-between px-4 py-4">
-        <button type="button" onClick={() => app.setTransactionsOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Back</button>
+        <button type="button" onClick={() => app.setTransactionsOpen(false)} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-[#07111f] shadow-sm">Back</button>
         <h2 className="text-lg font-black">All transactions</h2>
         <span className="w-[58px]" aria-hidden="true" />
       </div>
@@ -1044,7 +1044,7 @@ function AllSavingsScreen({ app }: { app: DemoState }) {
   return (
     <div className="absolute inset-0 z-40 bg-[#050816] text-white">
       <div className="flex items-center justify-between px-4 py-4">
-        <button type="button" onClick={() => app.setAllSavingsOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Back</button>
+        <button type="button" onClick={() => app.setAllSavingsOpen(false)} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-[#07111f] shadow-sm">Back</button>
         <h2 className="text-lg font-black">All savings</h2>
         <span className="w-[58px]" aria-hidden="true" />
       </div>
@@ -1067,7 +1067,7 @@ function CompareCardsScreen({ app }: { app: DemoState }) {
   return (
     <div className="absolute inset-0 z-40 bg-[#050816] text-white">
       <div className="flex items-center justify-between px-4 py-4">
-        <button type="button" onClick={() => app.setCompareCardsOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Back</button>
+        <button type="button" onClick={() => app.setCompareCardsOpen(false)} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-[#07111f] shadow-sm">Back</button>
         <h2 className="text-lg font-black">Compare cards</h2>
         <span className="w-[58px]" aria-hidden="true" />
       </div>
@@ -1107,7 +1107,7 @@ function AllBenefitsScreen({ app }: { app: DemoState }) {
   return (
     <div className="absolute inset-0 z-40 bg-[#050816] text-white">
       <div className="flex items-center justify-between px-4 py-4">
-        <button type="button" onClick={() => app.setAllBenefitsOpen(false)} className="rounded-full border border-white/10 px-3 py-1.5 text-sm">Back</button>
+        <button type="button" onClick={() => app.setAllBenefitsOpen(false)} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-[#07111f] shadow-sm">Back</button>
         <h2 className="text-lg font-black">All rewards</h2>
         <span className="w-[58px]" aria-hidden="true" />
       </div>
