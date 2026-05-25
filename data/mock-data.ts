@@ -182,10 +182,10 @@ export const initialSavingsEvents = [
   { id: "e1", merchant: "Nike", category: "Fashion", source: "issuer rewards", description: "Saved EUR 12 using Intesa Visa", amount: 12, status: "saved" as SavingsStatus },
   { id: "e2", merchant: "Zara", category: "Fashion", source: "public promo codes", description: "Saved EUR 7.50 using SAVE10", amount: 7.5, status: "saved" as SavingsStatus },
   { id: "e3", merchant: "Glovo", category: "Food delivery", source: "issuer rewards", description: "Missed EUR 2.99 free delivery", amount: 2.99, status: "missed" as SavingsStatus },
-  { id: "e4", merchant: "SHEIN", category: "Fashion", source: "card recommendations", description: "Missed EUR 5 HYPE cashback", amount: 5, status: "missed" as SavingsStatus },
+  { id: "e4", merchant: "SHEIN", category: "Fashion", source: "missed savings analysis", description: "Missed EUR 5 HYPE cashback", amount: 5, status: "missed" as SavingsStatus },
   { id: "e5", merchant: "Esselunga", category: "Groceries", source: "merchant offers", description: "Saved EUR 4 with UniCredit groceries offer", amount: 4, status: "saved" as SavingsStatus },
   { id: "e6", merchant: "Sephora", category: "Beauty", source: "merchant offers", description: "Expiring offer not used yet", amount: 8, status: "expiring" as SavingsStatus },
-  { id: "e7", merchant: "Spotify", category: "Subscriptions", source: "card recommendations", description: "No better reward found", amount: 0, status: "saved" as SavingsStatus },
+  { id: "e7", merchant: "Spotify", category: "Subscriptions", source: "savings analysis", description: "No better reward found", amount: 0, status: "saved" as SavingsStatus },
 ];
 
 export const defaultFavorites = {
@@ -218,6 +218,5 @@ export const advisorPrompts = [
   "Best card for groceries",
   "Where did I miss savings?",
   "Rewards expiring soon",
-  "New card suggestions",
   "Ask SAVR through ChatGPT",
 ];

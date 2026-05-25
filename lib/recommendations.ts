@@ -1,6 +1,6 @@
 import { initialOffers, OfferChannel, SavrMode } from "@/data/mock-data";
 
-export function recommendationScore({
+export function offerScore({
   merchant,
   category,
   channel,
@@ -61,7 +61,7 @@ export function bestOfferForMerchant({
 
   return {
     ...offer,
-    score: recommendationScore({
+    score: offerScore({
       merchant: offer.merchant,
       category: offer.category,
       channel: offer.channel,

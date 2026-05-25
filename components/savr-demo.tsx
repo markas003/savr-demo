@@ -20,7 +20,7 @@ import {
   SavingsStatus,
   userProfile,
 } from "@/data/mock-data";
-import { bestOfferForMerchant, recommendationScore, visibleReminderCount } from "@/lib/recommendations";
+import { bestOfferForMerchant, offerScore, visibleReminderCount } from "@/lib/recommendations";
 
 type Modal =
   | { type: "card"; id: string }
@@ -34,7 +34,6 @@ type Modal =
   | { type: "receipt"; id: string; mode: "upload" | "manual" }
   | { type: "transaction"; id: string }
   | { type: "plugin"; key: ExternalLinkKey; name: string }
-  | { type: "cardRecommendation" }
   | { type: "message"; title: string; body: string }
   | null;
 
@@ -66,7 +65,7 @@ const tabs: Array<{ id: AppTab; label: string }> = [
   { id: "advisor", label: "Personal Advisor" },
 ];
 
-const notificationTypes = ["website", "in-store", "app", "expiry", "new card suggestion"];
+const notificationTypes = ["website", "in-store", "app", "expiry"];
 const thresholdOptions = [2, 5, 10];
 const timingOptions = ["0 seconds", "30 seconds", "1 minute", "1 minute 30 seconds", "2 minutes", "2 minutes 30 seconds", "3 minutes"];
 const initialCards: ConnectedCard[] = connectedAccounts.map((card, index) => ({
@@ -276,8 +275,8 @@ function ModalSheet({
               <p>Card ending: •••• {card.last4 || "0000"}</p>
             </div>
             <h4 className="mt-4 text-sm font-bold">Current SAVR reward matches</h4>
-            <div className="mt-2 grid gap-2">{(detail?.activeBenefits || ["Eligible for SAVR merchant matching", "Used in best-card recommendations"]).map((item) => <Panel key={item}>{item.replace(/benefits/g, "rewards").replace(/benefit/g, "reward")}</Panel>)}</div>
-            <h4 className="mt-4 text-sm font-bold">When SAVR would recommend it</h4>
+            <div className="mt-2 grid gap-2">{(detail?.activeBenefits || ["Eligible for SAVR merchant matching", "Used when SAVR ranks payment options"]).map((item) => <Panel key={item}>{item.replace(/benefits/g, "rewards").replace(/benefit/g, "reward")}</Panel>)}</div>
+            <h4 className="mt-4 text-sm font-bold">Best ways to use this card</h4>
             <div className="mt-2 flex flex-wrap gap-2">{(detail?.recommendedUse || ["New purchases", "Merchant offers"]).map((item) => <Pill key={item} tone="blue">{item}</Pill>)}</div>
           </SheetSection>
         )}
@@ -390,7 +389,6 @@ function ModalSheet({
               <ActionButton onClick={() => { app.correctEvent(event.id); close(); }}>Mark corrected</ActionButton>
               <ActionButton tone="secondary" onClick={() => { app.setModal({ type: "receipt", id: event.id, mode: "upload" }); }}>Add receipt</ActionButton>
               <ActionButton tone="secondary" onClick={() => { app.setModal({ type: "receipt", id: event.id, mode: "manual" }); }}>Manual correction</ActionButton>
-              <ActionButton tone="quiet" onClick={() => { app.setTab("advisor"); close(); }}>View recommendation</ActionButton>
             </div>
           </SheetSection>
         )}
@@ -406,17 +404,6 @@ function ModalSheet({
           <SheetSection title={`${modal.name} plug-in`}>
             <p className="text-sm leading-6 text-white/66">SAVR can answer your card and offer questions inside this assistant.</p>
             <ActionButton className="mt-4 w-full" onClick={() => openExternal(modal.key)}>Open {modal.name}</ActionButton>
-          </SheetSection>
-        )}
-
-        {modal.type === "cardRecommendation" && (
-          <SheetSection title="Visa Rewards Plus">
-            <div className="grid gap-2">
-              <TransactionDetailRow label="Why SAVR recommends it" value="Your recent spend is shifting toward fashion, delivery, and travel, where a stronger rewards card can outperform your current basic Visa debit setup." />
-              <TransactionDetailRow label="Estimated uplift" value="EUR 14-22/month" nowrap tone="saved" />
-              <TransactionDetailRow label="Best fit" value="Fashion cashback, delivery rewards, and travel rewards" />
-            </div>
-            <ActionButton className="mt-4 w-full" onClick={() => undefined}>Open card website</ActionButton>
           </SheetSection>
         )}
 
@@ -609,7 +596,6 @@ function useDemoState() {
   const [transactionsOpen, setTransactionsOpen] = useState(false);
   const [allBenefitsOpen, setAllBenefitsOpen] = useState(false);
   const [allSavingsOpen, setAllSavingsOpen] = useState(false);
-  const [compareCardsOpen, setCompareCardsOpen] = useState(false);
   const [signedOut, setSignedOut] = useState(false);
   const [cards, setCards] = useState<ConnectedCard[]>(initialCards);
   const [mode, setMode] = useState<SavrMode>("active");
@@ -621,7 +607,6 @@ function useDemoState() {
     "in-store": true,
     app: true,
     expiry: true,
-    "new card suggestion": true,
   });
   const [favoriteStores, setFavoriteStores] = useState(defaultFavorites.stores);
   const [favoriteCategories, setFavoriteCategories] = useState(defaultFavorites.categories);
@@ -675,7 +660,7 @@ function useDemoState() {
   function scoreOffer(id: string) {
     const offer = offers.find((item) => item.id === id);
     if (!offer) return 0;
-    return recommendationScore({
+    return offerScore({
       merchant: offer.merchant,
       category: offer.category,
       channel: offer.channel,
@@ -698,14 +683,13 @@ function useDemoState() {
     setTransactionsOpen(false);
     setAllBenefitsOpen(false);
     setAllSavingsOpen(false);
-    setCompareCardsOpen(false);
     setSignedOut(false);
     setCards(initialCards);
     setMode("active");
     setThreshold(5);
     setCustomThreshold(7);
     setTiming("2 minutes");
-    setNotifications({ website: true, "in-store": true, app: true, expiry: true, "new card suggestion": true });
+    setNotifications({ website: true, "in-store": true, app: true, expiry: true });
     setFavoriteStores(defaultFavorites.stores);
     setFavoriteCategories(defaultFavorites.categories);
     setOfferState({});
@@ -731,8 +715,6 @@ function useDemoState() {
     setAllBenefitsOpen,
     allSavingsOpen,
     setAllSavingsOpen,
-    compareCardsOpen,
-    setCompareCardsOpen,
     signedOut,
     setSignedOut,
     cards,
@@ -1057,40 +1039,6 @@ function AllSavingsScreen({ app }: { app: DemoState }) {
   );
 }
 
-function CompareCardsScreen({ app }: { app: DemoState }) {
-  const rows = [
-    { name: "Current mix", card: "Intesa Visa Debit + HYPE", match: "Good coverage for in-store fashion and basic cashback.", value: "Current saving: EUR 29.50", tone: "default", clickable: false },
-    { name: "Recommended upgrade", card: "Visa Rewards Plus", match: "Stronger fit for fashion, delivery, and travel after your recent shift toward those categories.", value: "Potential uplift: EUR 14-22/month", tone: "gold", clickable: true },
-    { name: "Keep as backup", card: "UniCredit Mastercard", match: "Still useful for groceries and Trenitalia bookings.", value: "Best for essentials", tone: "default", clickable: false },
-  ];
-
-  return (
-    <div className="absolute inset-0 z-40 bg-[#050816] text-white">
-      <div className="flex items-center justify-between px-4 py-4">
-        <button type="button" onClick={() => app.setCompareCardsOpen(false)} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-[#07111f] shadow-sm">Back</button>
-        <h2 className="text-lg font-black">Compare cards</h2>
-        <span className="w-[58px]" aria-hidden="true" />
-      </div>
-      <div className="h-[calc(100%-72px)] overflow-y-auto overflow-x-hidden px-4 pb-44">
-        <div className="rounded-3xl border border-[#2d79ff]/30 bg-[#2d79ff]/12 p-4">
-          <p className="text-sm font-black">Shopping behaviour is shifting</p>
-          <p className="mt-2 text-xs leading-5 text-white/64">SAVR compared your recent fashion, delivery, groceries, and travel spend against your connected cards and likely reward upgrades.</p>
-        </div>
-        <div className="mt-4 grid gap-3">
-          {rows.map((row) => (
-            <button key={row.name} type="button" onClick={() => row.clickable ? app.setModal({ type: "cardRecommendation" }) : app.setModal({ type: "message", title: row.card, body: row.match })} className={`rounded-3xl border p-4 text-left ${row.tone === "gold" ? "border-[#ffd347]/35 bg-[#ffd347]/12" : "border-white/10 bg-white/6"}`}>
-              <p className="text-xs font-black uppercase tracking-[0.08em] text-white/40">{row.name}</p>
-              <p className="mt-2 text-base font-black">{row.card}</p>
-              <p className="mt-2 text-xs leading-5 text-white/62">{row.match}</p>
-              <p className={`mt-3 text-sm font-black ${row.tone === "gold" ? "text-[#ffd347]" : "text-[#7ee5a7]"}`}>{row.value}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function AllBenefitsScreen({ app }: { app: DemoState }) {
   const [filter, setFilter] = useState("All");
   const offers = [...app.offers].sort((left, right) => offerPriority(right, app) - offerPriority(left, app));
@@ -1382,12 +1330,6 @@ function AdvisorScreen({ app }: { app: DemoState }) {
           body="You captured most available savings on groceries, transport, and Zara checkout. Your biggest opportunity is still activating rewards before paying."
           action="Review savings"
           onClick={() => app.setTab("difference")}
-        />
-        <InsightCard
-          title="Card recommendation"
-          body="Your spending is moving toward fashion and delivery. A stronger Visa rewards card could improve your monthly saving potential by about EUR 14-22."
-          action="Compare cards"
-          onClick={() => app.setCompareCardsOpen(true)}
         />
       </div>
       <SectionTitle title="Third-party AI plug-in" />
@@ -1694,7 +1636,6 @@ export function SavrDemo() {
                 {app.transactionsOpen && <TransactionsScreen app={app} />}
                 {app.allBenefitsOpen && <AllBenefitsScreen app={app} />}
                 {app.allSavingsOpen && <AllSavingsScreen app={app} />}
-                {app.compareCardsOpen && <CompareCardsScreen app={app} />}
                 {app.signedOut && <LockedState app={app} />}
                 <ModalSheet modal={app.modal} close={() => app.setModal(null)} app={app} onLock={() => setUnlocked(false)} />
               </>
